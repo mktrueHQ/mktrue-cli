@@ -1,0 +1,60 @@
+# Local development. A throwaway authenticated Mongo on the same shared network name, so the two
+# app repos run against locally exactly what they run against in production.
+#
+# **Production is docker-compose.prod.yml.** Point Dokploy at that one.
+#
+# Differences from production, each on purpose:
+#   * a named volume instead of a bind mount — nothing here is precious
+#   * the network is NOT `internal`, so `docker compose exec` conveniences work unimpeded
+#   * `rs.initiate` runs here, because a fresh volume has no replica set; production adopts one
+#     that already exists
+name: __MKTRUE_NAME__-infrastructure-dev
+
+services:
+  infra-mongo:
+    image: mongo:8.2.12
+    command: ["mongod", "--config", "/etc/mongo/mongod.conf"]
+    ports:
+      # 27317 — off __MKTRUE_NAME__'s dev 27117 and the a second product's 27217, so all three can run at once.
+      # Published in DEV ONLY. Production publishes nothing.
+      - "27317:27017"
+    volumes:
+      - infra-mongo-data:/data/db
+      - ./mongo/mongod.conf:/etc/mongo/mongod.conf:ro
+      - ./scripts:/scripts:ro
+      - ./dev-keyfile:/etc/mongo-keyfile/keyfile:ro
+    healthcheck:
+      # Initiates rs0 on first boot, then short-circuits.
+      #
+      # **`rs.status()` is what decides, not `db.hello()`** — the first version of this used hello
+      # and never initiated anything, because hello *returns* `isWritablePrimary: false` rather
+      # than throwing, so the catch never fired and the set sat with no primary forever. Only
+      # `rs.status()` throws `NotYetInitialized`, which is the actual condition being tested.
+      #
+      # The localhost exception makes this possible before any user exists. Once bootstrap-users
+      # has run, the exception closes and this becomes a plain primary check.
+      test: >
+        mongosh --quiet --eval "
+          try { rs.status(); if (db.hello().isWritablePrimary) quit(0); quit(1) }
+          catch (e) {
+            if (e.codeName !== 'NotYetInitialized') quit(1);
+            rs.initiate({_id:'rs0',members:[{_id:0,host:'infra-mongo:27017'}]});
+            quit(1);
+          }
+        "
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
+    networks:
+      __MKTRUE_NAME__-infra:
+        aliases:
+          - __MKTRUE_NAME__-mongo
+
+volumes:
+  infra-mongo-data:
+
+networks:
+  __MKTRUE_NAME__-infra:
+    name: ${INFRA_NETWORK:-__MKTRUE_NAME__-infra}
+    driver: bridge

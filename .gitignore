@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.turbo/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# decision 0034: the build copies skill/ into the package.
+packages/cli/skill/

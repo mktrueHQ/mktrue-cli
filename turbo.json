@@ -1,0 +1,13 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "stream",
+  "globalDependencies": ["bench/**", "docs/**", "templates/**", "skill/**", ".mktrue.json"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "skill/**"]
+    },
+    "typecheck": {},
+    "test": {}
+  }
+}

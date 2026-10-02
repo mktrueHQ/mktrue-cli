@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+/*
+ * `test/` is not a source of classes. Tailwind v4 scans every non-ignored file under the build's
+ * working directory (`apps/web`) and reads comments as well as code, so a guard that *names* a
+ * forbidden class mints a working copy of it into the shipped stylesheet. `test/tokens.test.ts`
+ * exists to assert which hexes may appear, and it has to quote them — this line is why it can.
+ * (Measured lesson carried over from __MKTRUE_NAME__'s globals.css.)
+ */
+@source not "../test";
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * __MKTRUE_TITLE__'s design tokens, duplicated by hand rather than shared as a package
+ *. If one changes in __MKTRUE_NAME__, it changes here in the same week.
+ *
+ * **No new hue enters the product** (CLAUDE.md §4.6). `test/tokens.test.ts`
+ * fails if a hex appears in this file that __MKTRUE_TITLE__ does not already own.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+@theme {
+  /* The seven. Unchanged. */
+  --color-background: #0b0d10;
+  --color-surface: #14171c;
+  --color-lines: #262b33;
+  --color-foreground: #e6e8eb;
+  --color-muted: #9aa3ad;
+  --color-accent: #818cf8;
+  /* Destructive only. On this page it has exactly one job: the verification error in the
+     request-access form (M2). If it is on screen anywhere else, something is wrong. */
+  --color-danger: #f87171;
+
+  /*
+   * The two neutral steps between `lines` and `muted`. Neither carries meaning; they exist
+   * because an unchecked checkbox stroke and a placeholder both need a value that `lines` is
+   * too dark for and `muted` too light for. The handoff notes `#262b33`/`#9aa3ad` are
+   * acceptable substitutes at some loss of legibility — we take the two steps.
+   */
+  --color-control: #3a414d;
+  --color-dim-ink: #5d6670;
+
+  /*
+   * The four Area hues, borrowed from __MKTRUE_TITLE__'s existing six chart hues — so, again, no new
+   * colour. On THIS page they no longer render at all: the hero frame that used to carry them as a
+   * 3px left cap became a real capture, so the only place they are drawn is the share
+   * card, `app/[locale]/opengraph-image.tsx`, which inlines its hexes and cannot read these. They
+   * are kept declared because the card's values must stay in step with them, and the rule they
+   * carried still holds wherever they come back: never a fill, never without the Area's word
+   * available. `#34d399` (green) stays reserved for charts and is not here.
+   */
+  --color-area-work: #94a3b8;
+  --color-area-coding: #22d3ee;
+  --color-area-home: #fbbf24;
+  --color-area-life: #f472b6;
+
+  /*
+   * THE TYPE SCALE — four sizes, named for the job, and there is no fifth.
+   * Fluid, exactly as __MKTRUE_NAME__ ships it (its an earlier decision): the viewport term is anchored at
+   * `(100vw - 360px)`, i.e. zero at and below 360px, so on a phone every size is pure `rem`
+   * and answers to the OS font setting; the viewport only ever adds the widescreen bonus.
+   *
+   * `--text-*: initial` deletes Tailwind's default size namespace, so `text-sm` and `text-xs`
+   * are not utilities at all and the drift cannot come back one section at a time.
+   */
+  --text-*: initial;
+
+  --text-meta: clamp(1rem, calc(1rem + (100vw - 360px) / 540), 1.125rem);
+  --text-meta--line-height: 1.4;
+  --text-body: clamp(1.125rem, calc(1.125rem + (100vw - 360px) / 360), 1.3125rem);
+  --text-body--line-height: 1.5;
+  --text-lead: clamp(1.25rem, calc(1.25rem + (100vw - 360px) / 360), 1.4375rem);
+  --text-lead--line-height: 1.45;
+  --text-title: clamp(1.5rem, calc(1.5rem + (100vw - 360px) / 270), 1.75rem);
+  --text-title--line-height: 1.25;
+
+  /*
+   * **The hero h1 is the one licensed exception to the scale** — and it is licensed here, in
+   * the token file, rather than as a one-off arbitrary value in the markup, so that it stays a
+   * single deliberate decision instead of becoming a fifth size by accident. It is a static
+   * marketing headline outside any app screen; nothing else may use it.
+   * 64px / 1.05 / -.035em desktop, 36px / 1.08 / -.03em mobile (handoff §3).
+   */
+  --text-display: clamp(2.25rem, calc(2.25rem + (100vw - 360px) / 38.4), 4rem);
+  --text-display--line-height: 1.06;
+  --text-display--letter-spacing: -0.035em;
+
+  /*
+   * Three families, all self-hosted by `next/font/google` at build time — the browser never
+   * talks to Google. Subset to latin, `display: swap`, preloaded. Six weights total.
+   *
+   * Body copy is Plex Sans paired with `system-ui` in the same stack, so sentences paint on the
+   * first frame in the system face and reflow once. Archivo is only ever the h1, card headings
+   * and section labels, so a swap there moves very little.
+   *
+   * If the budget will not take three families, cut Archivo first and set headings in Plex Sans
+   * 600. Cutting Plex Mono is worse — the eyebrow and the audit rows depend on tabular figures.
+   */
+  --font-sans: var(--font-plex-sans), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-archivo), var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /*
+   * Spacing pinned to pixels so that only the type grows with the OS font setting — Tailwind
+   * derives every `p-*`, `gap-*` and `min-h-*` from this. Same value as the `0.25rem` default at
+   * the default root size, so nothing moves today; what it buys is that nothing moves tomorrow.
+   */
+  --spacing: 4px;
+
+  /* 6 default, 8 cards and rows, 16 dialogs. 12 is never used. The device bezel is 44 outside and
+     34 inside, and that is a bezel, not a product radius — both are set inline where the frame is
+     drawn, and the inner one is what rounds the capture's own square corners. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  /*
+   * Depth is two tokens and nothing else gets a shadow.
+   *
+   * `inner-light` does the real work: it separates a surface from the ground at 23:00 with the
+   * screen dim, and is invisible at full brightness. Rows use `.03` rather than `.04` so a list
+   * of them does not read as striped.
+   */
+  --shadow-inner-light: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --shadow-inner-row: inset 0 1px 0 rgb(255 255 255 / 0.03);
+  --shadow-lift: 0 10px 30px rgb(0 0 0 / 0.4);
+  --shadow-lift-lg: 0 24px 60px rgb(0 0 0 / 0.6);
+}
+
+/*
+ * The accent at 10% and its 45% border — the one tinted surface treatment __MKTRUE_TITLE__ owns (selected
+ * radio chip, active nav, ticked habit row). Utilities rather than `@theme` colours because they
+ * are a *pair* that must be used together; splitting them into two colour tokens invites a tinted
+ * background with no border, which reads as a disabled control.
+ */
+@utility accent-tint {
+  background-color: rgb(129 140 248 / 0.1);
+  border-color: rgb(129 140 248 / 0.45);
+}
+
+:root {
+  /* Native form controls, scrollbars and UA defaults render dark too. There is no light theme
+     in __MKTRUE_TITLE__ and there is none here — `viewport.themeColor` in layout.tsx mirrors
+     `--color-background`; keep them in sync. */
+  color-scheme: dark;
+}
+
+/*
+ * Focus is one pattern, everywhere: a 2px accent outline at 2px offset. No ring utilities, no
+ * per-component variation. Declared once here so no section has to remember it.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/*
+ * Amounts and counts line up in columns wherever mono is used, so give it tabular figures by
+ * default rather than remembering the utility at each call site.
+ */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}

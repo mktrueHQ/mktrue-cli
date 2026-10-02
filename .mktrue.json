@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "kit": "0.3.0",
+  "targets": ["claude-code"],
+  "answers": {
+    "name": "mktrue",
+    "purpose": "a command-line tool that turns a product idea into a repository an AI coding agent can build without drifting",
+    "owner": "the founder",
+    "audienceTest": "an engineer at a terminal who has never seen this repository, deciding in one command whether it is still true",
+    "stakes": "it writes into other people's repositories, so a wrong render is a wrong repository somebody else has to unpick",
+    "dataClasses": [],
+    "auth": "none",
+    "ports": {},
+    "languages": ["en"],
+    "siblings": [],
+    "skills": []
+  },
+  "budgets": { "rules": 10000, "state": 2500, "decision": 12000 },
+  "auditTriggers": [
+    "the installer",
+    "login",
+    "the registry",
+    "check --report",
+    "config",
+    "dependencies"
+  ],
+  "baseBranch": "main",
+  "pins": [],
+  "owned": {}
+}

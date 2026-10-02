@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "name": "infrastructure",
+  "version": "0.1.0",
+  "description": "An authenticated MongoDB replica set and the private network the products reach it on.",
+  "slots": {
+    "NAME": {
+      "from": "answers.name",
+      "required": true,
+      "kind": "text"
+    },
+    "NAME_UPPER": {
+      "from": "derived.nameUpper",
+      "required": true,
+      "kind": "text"
+    },
+    "CONSUMERS": {
+      "from": "answers.consumers",
+      "required": true,
+      "kind": "list",
+      "separator": " "
+    },
+    "CONSUMER_ENV": {
+      "from": "derived.consumerEnv",
+      "required": true,
+      "kind": "text"
+    }
+  },
+  "files": [
+    {
+      "path": ".env.example"
+    },
+    {
+      "path": ".github/workflows/ci.yml"
+    },
+    {
+      "path": ".gitignore"
+    },
+    {
+      "path": "docker-compose.prod.yml"
+    },
+    {
+      "path": "docker-compose.yml"
+    },
+    {
+      "path": "mongo/mongod.conf"
+    },
+    {
+      "path": "scripts/_mongo.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/backup-loop.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/bootstrap-users.js"
+    },
+    {
+      "path": "scripts/bootstrap-users.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/compose-check.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/generate-keyfile.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/init-replica-set.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/preflight.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/restore.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/shellcheck.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/verify.sh",
+      "executable": true
+    }
+  ],
+  "gates": ["sh scripts/shellcheck.sh", "sh scripts/compose-check.sh"],
+  "requires": ["docker"]
+}

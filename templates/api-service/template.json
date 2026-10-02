@@ -1,0 +1,400 @@
+{
+  "schema": 1,
+  "name": "api-service",
+  "version": "0.1.0",
+  "description": "An authenticated, multi-tenant HTTP API: a gate that refuses by default, a tenancy guard that throws before I/O, and one placeholder context to copy.",
+  "slots": {
+    "NAME": {
+      "from": "answers.name",
+      "required": true,
+      "kind": "text"
+    },
+    "NAME_UPPER": {
+      "from": "derived.nameUpper",
+      "required": true,
+      "kind": "text"
+    },
+    "OWNER": {
+      "from": "answers.owner",
+      "required": true,
+      "kind": "text"
+    },
+    "LOCALES": {
+      "from": "derived.localesLiteral",
+      "required": true,
+      "kind": "text"
+    },
+    "API_PORT": {
+      "from": "answers.ports.api",
+      "required": true,
+      "kind": "text"
+    }
+  },
+  "files": [
+    {
+      "path": ".env.example"
+    },
+    {
+      "path": ".github/workflows/ci.yml"
+    },
+    {
+      "path": ".gitignore"
+    },
+    {
+      "path": "README.md"
+    },
+    {
+      "path": "docs/architecture.md"
+    },
+    {
+      "path": "docs/security.md"
+    },
+    {
+      "path": "package.json"
+    },
+    {
+      "path": "packages/contracts/package.json"
+    },
+    {
+      "path": "packages/contracts/src/api-error.ts"
+    },
+    {
+      "path": "packages/contracts/src/civil-date.ts"
+    },
+    {
+      "path": "packages/contracts/src/example-item.ts"
+    },
+    {
+      "path": "packages/contracts/src/example-stats.ts"
+    },
+    {
+      "path": "packages/contracts/src/health.ts"
+    },
+    {
+      "path": "packages/contracts/src/index.ts"
+    },
+    {
+      "path": "packages/contracts/src/me.ts"
+    },
+    {
+      "path": "packages/contracts/src/object-id.ts"
+    },
+    {
+      "path": "packages/contracts/src/profile.ts"
+    },
+    {
+      "path": "packages/contracts/test/api-error.test.ts"
+    },
+    {
+      "path": "packages/contracts/test/example-item.test.ts"
+    },
+    {
+      "path": "packages/contracts/test/profile.test.ts"
+    },
+    {
+      "path": "packages/contracts/tsconfig.json"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "generated": true
+    },
+    {
+      "path": "pnpm-workspace.yaml"
+    },
+    {
+      "path": "services/api/package.json"
+    },
+    {
+      "path": "services/api/src/app/config.ts"
+    },
+    {
+      "path": "services/api/src/app/main.ts"
+    },
+    {
+      "path": "services/api/src/app/serialize-by-user.ts"
+    },
+    {
+      "path": "services/api/src/app/server.ts"
+    },
+    {
+      "path": "services/api/src/contexts/auth/application/errors.ts"
+    },
+    {
+      "path": "services/api/src/contexts/auth/application/ports.ts"
+    },
+    {
+      "path": "services/api/src/contexts/auth/infrastructure/clerk-token-verifier.ts"
+    },
+    {
+      "path": "services/api/src/contexts/auth/infrastructure/dev-session-token-verifier.ts"
+    },
+    {
+      "path": "services/api/src/contexts/auth/infrastructure/null-token-verifier.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/application/add-example-note.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/application/count-example-items-by-status.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/application/create-example-item.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/application/errors.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/application/list-example-items.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/application/list-example-notes.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/application/ports.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/application/update-example-item.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/domain/example-item.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/domain/example-note.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/infrastructure/example-item-model.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/infrastructure/example-note-model.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/infrastructure/mongoose-example-item-repository.ts"
+    },
+    {
+      "path": "services/api/src/contexts/example/infrastructure/mongoose-example-note-repository.ts"
+    },
+    {
+      "path": "services/api/src/contexts/profile/application/errors.ts"
+    },
+    {
+      "path": "services/api/src/contexts/profile/application/get-profile.ts"
+    },
+    {
+      "path": "services/api/src/contexts/profile/application/ports.ts"
+    },
+    {
+      "path": "services/api/src/contexts/profile/application/resolve-time-zone.ts"
+    },
+    {
+      "path": "services/api/src/contexts/profile/application/update-profile.ts"
+    },
+    {
+      "path": "services/api/src/contexts/profile/domain/user-profile.ts"
+    },
+    {
+      "path": "services/api/src/contexts/profile/infrastructure/mongoose-user-profile-repository.ts"
+    },
+    {
+      "path": "services/api/src/contexts/profile/infrastructure/user-profile-model.ts"
+    },
+    {
+      "path": "services/api/src/contexts/shared/application/ports.ts"
+    },
+    {
+      "path": "services/api/src/contexts/shared/domain/civil-date.ts"
+    },
+    {
+      "path": "services/api/src/contexts/shared/infrastructure/mongo.ts"
+    },
+    {
+      "path": "services/api/src/contexts/shared/infrastructure/object-id.ts"
+    },
+    {
+      "path": "services/api/src/contexts/shared/infrastructure/user-scoped-schema.ts"
+    },
+    {
+      "path": "services/api/src/controllers/caller-clock.ts"
+    },
+    {
+      "path": "services/api/src/controllers/caller-id.ts"
+    },
+    {
+      "path": "services/api/src/controllers/deps.ts"
+    },
+    {
+      "path": "services/api/src/controllers/example-items/create.ts"
+    },
+    {
+      "path": "services/api/src/controllers/example-items/index.ts"
+    },
+    {
+      "path": "services/api/src/controllers/example-items/list.ts"
+    },
+    {
+      "path": "services/api/src/controllers/example-items/notes.ts"
+    },
+    {
+      "path": "services/api/src/controllers/example-items/to-dto.ts"
+    },
+    {
+      "path": "services/api/src/controllers/example-items/update.ts"
+    },
+    {
+      "path": "services/api/src/controllers/health.ts"
+    },
+    {
+      "path": "services/api/src/controllers/map-example-error.ts"
+    },
+    {
+      "path": "services/api/src/controllers/map-profile-error.ts"
+    },
+    {
+      "path": "services/api/src/controllers/me.ts"
+    },
+    {
+      "path": "services/api/src/controllers/profile/index.ts"
+    },
+    {
+      "path": "services/api/src/controllers/profile/read.ts"
+    },
+    {
+      "path": "services/api/src/controllers/profile/to-profile-dto.ts"
+    },
+    {
+      "path": "services/api/src/controllers/profile/update.ts"
+    },
+    {
+      "path": "services/api/src/controllers/reject-invalid-request.ts"
+    },
+    {
+      "path": "services/api/src/controllers/stats/example-items.ts"
+    },
+    {
+      "path": "services/api/src/controllers/stats/index.ts"
+    },
+    {
+      "path": "services/api/src/middlewares/api-errors.ts"
+    },
+    {
+      "path": "services/api/src/middlewares/extract-bearer-token.ts"
+    },
+    {
+      "path": "services/api/src/middlewares/map-auth-error.ts"
+    },
+    {
+      "path": "services/api/src/middlewares/path-without-query.ts"
+    },
+    {
+      "path": "services/api/src/middlewares/require-loopback-host.ts"
+    },
+    {
+      "path": "services/api/src/middlewares/require-user.ts"
+    },
+    {
+      "path": "services/api/test/app/client-supplied-owner.test.ts"
+    },
+    {
+      "path": "services/api/test/app/config.test.ts"
+    },
+    {
+      "path": "services/api/test/app/cross-tenant.test.ts"
+    },
+    {
+      "path": "services/api/test/app/owner-first-ports.test.ts"
+    },
+    {
+      "path": "services/api/test/app/profile-is-not-admission.test.ts"
+    },
+    {
+      "path": "services/api/test/app/query-guard-bypass.test.ts"
+    },
+    {
+      "path": "services/api/test/app/serialize-by-user.test.ts"
+    },
+    {
+      "path": "services/api/test/app/server.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/auth/infrastructure/null-token-verifier.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/example/application/add-example-note.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/example/domain/example-item.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/profile/application/resolve-time-zone.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/profile/application/switches-locale.test.ts",
+      "when": {
+        "answer": "answers.languages",
+        "includes": "es"
+      }
+    },
+    {
+      "path": "services/api/test/contexts/profile/application/update-profile.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/profile/domain/enum-drift.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/shared/infrastructure/user-scoped-schema.test.ts"
+    },
+    {
+      "path": "services/api/test/controllers/example-items/notes.test.ts"
+    },
+    {
+      "path": "services/api/test/controllers/map-example-error.test.ts"
+    },
+    {
+      "path": "services/api/test/middlewares/require-user.test.ts"
+    },
+    {
+      "path": "services/api/test/test-support/fake-token-verifier.ts"
+    },
+    {
+      "path": "services/api/test/test-support/in-memory-example.ts"
+    },
+    {
+      "path": "services/api/test/test-support/owner-first-ports.ts"
+    },
+    {
+      "path": "services/api/test/test-support/owner-server.ts"
+    },
+    {
+      "path": "services/api/test/test-support/registered-routes.ts"
+    },
+    {
+      "path": "services/api/test/test-support/source-sweep.ts"
+    },
+    {
+      "path": "services/api/tsconfig.json"
+    },
+    {
+      "path": "services/api/tsup.config.ts"
+    },
+    {
+      "path": "services/api/vitest.config.ts"
+    },
+    {
+      "path": "services/api/vitest.setup.ts"
+    },
+    {
+      "path": "tsconfig.base.json"
+    },
+    {
+      "path": "turbo.json"
+    }
+  ],
+  "gates": ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test"],
+  "transforms": [
+    {
+      "find": " (D-\\d{3})",
+      "replace": "",
+      "lossy": true
+    }
+  ],
+  "tokenise": ["NAME", "NAME_UPPER", "OWNER", "LOCALES"]
+}

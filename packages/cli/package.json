@@ -1,0 +1,39 @@
+{
+  "name": "mktrue",
+  "version": "0.3.0",
+  "description": "Turns a product idea into a repository an AI coding agent can build without drifting, and keeps it in step.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mktrueHQ/mktrue-cli.git",
+    "directory": "packages/cli"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "mktrue": "./dist/mktrue.js"
+  },
+  "files": [
+    "dist/mktrue.js",
+    "skill",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/embed-bench.mjs && tsup && node ../../scripts/copy-skill.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@clack/core": "1.5.1",
+    "@mktrue/audit": "workspace:*",
+    "@mktrue/contracts": "workspace:*",
+    "@mktrue/core": "workspace:*",
+    "@types/node": "^24",
+    "tsup": "^8",
+    "typescript": "^5",
+    "vitest": "^4"
+  }
+}

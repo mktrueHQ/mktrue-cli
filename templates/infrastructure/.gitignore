@@ -1,0 +1,28 @@
+# Secrets and generated key material — never committed.
+.env
+.env.*
+!.env.example
+*.key
+*.keyfile
+# Not covered by the globs above: `*.keyfile` matches "x.keyfile" and not "dev-keyfile". Caught by
+# checking `git status` before the first commit, which is the only reason it is here.
+dev-keyfile
+keyfile
+secrets/
+
+# Local state
+data/
+backups/
+*.archive.gz
+*.partial
+
+# personal claude-code settings stay per-machine
+.claude/settings.local.json
+
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# claude code worktrees (EnterWorktree / --worktree) live inside the checkout
+.claude/worktrees/

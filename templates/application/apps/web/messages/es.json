@@ -1,0 +1,84 @@
+{
+  "shell": {
+    "signOut": "Cerrar sesión",
+    "backHome": "Volver al inicio",
+    "locale": {
+      "legend": "Idioma",
+      "refused": {
+        "session": "Tu sesión ya no es válida aquí. Vuelve a iniciar sesión para cambiar el idioma.",
+        "account": "Esta cuenta no puede cambiar el idioma aquí.",
+        "unavailable": "No se ha podido guardar el idioma ahora mismo. Inténtalo de nuevo en un momento.",
+        "rejected": "No se ha podido guardar ese idioma. Es un fallo nuestro, no algo que hayas hecho tú.",
+        "unreachable": "No está claro si el idioma ha cambiado. Inténtalo de nuevo en un momento."
+      }
+    },
+    "failure": {
+      "forbidden": {
+        "title": "Sin acceso",
+        "detail": "Esta cuenta no tiene acceso aquí. Inicia sesión con otra cuenta, o pide que añadan esta."
+      },
+      "unauthenticated": {
+        "title": "Sesión rechazada",
+        "detail": "Tu sesión ya no es válida aquí. Vuelve a iniciar sesión."
+      },
+      "notFound": {
+        "title": "Ya no está",
+        "detail": "No se ha encontrado. Recarga para ver lo que hay de verdad."
+      },
+      "invalid": {
+        "title": "No se ha podido enviar",
+        "detail": "La API ha rechazado la petición. Es un fallo nuestro, no algo que hayas hecho tú."
+      },
+      "conflict": {
+        "title": "Algo lo impide",
+        "detail": "No se puede hacer tal como están las cosas. Recarga para ver qué ha cambiado."
+      },
+      "unavailable": {
+        "auth": {
+          "title": "No se puede comprobar tu sesión",
+          "detail": "Ahora mismo no se puede verificar tu inicio de sesión. Inténtalo de nuevo en un momento."
+        },
+        "storage": {
+          "title": "No se llega a tus datos",
+          "detail": "El servicio funciona, pero ahora mismo no llega a su base de datos. Inténtalo de nuevo en un momento."
+        },
+        "api": {
+          "title": "No se pueden cargar tus datos",
+          "detail": "La API no está respondiendo bien ahora mismo. Recarga en un momento."
+        }
+      }
+    },
+    "boundary": {
+      "heading": "Algo ha fallado por nuestra parte",
+      "body": "No se ha podido dibujar esta pantalla. Es un fallo nuestro, no algo que hayas hecho tú.",
+      "retry": "Reintentar",
+      "reference": "Referencia {digest}"
+    },
+    "notFound": {
+      "heading": "Aquí no hay nada",
+      "body": "Ese enlace no lleva a ninguna parte: algo que se borró, o una dirección que nunca existió."
+    }
+  },
+  "edge": {
+    "signIn": {
+      "note": "El registro está cerrado. Solo entran las cuentas de la lista propia de este despliegue."
+    },
+    "noAccess": {
+      "title": "Sin acceso"
+    },
+    "notConfigured": {
+      "heading": "El inicio de sesión no está configurado",
+      "body": "Define las claves de Clerk (<code>{publishable}</code> y <code>{secret}</code> en el <code>{env}</code> de la raíz) y reinicia."
+    }
+  },
+  "exampleItems": {
+    "heading": "Elementos de ejemplo",
+    "filter": "Filtrar por estado",
+    "all": "Todos",
+    "empty": "Aún no hay nada.",
+    "status": {
+      "open": "Abierto",
+      "done": "Hecho"
+    }
+  }
+}

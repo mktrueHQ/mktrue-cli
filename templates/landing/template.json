@@ -1,0 +1,420 @@
+{
+  "schema": 1,
+  "name": "landing",
+  "version": "0.1.0",
+  "description": "A public page with gated access: two locales, a signed request flow, and an API that refuses to boot without its secrets.",
+  "slots": {
+    "NAME": {
+      "from": "answers.name",
+      "required": true,
+      "kind": "text"
+    },
+    "NAME_UPPER": {
+      "from": "derived.nameUpper",
+      "required": true,
+      "kind": "text"
+    },
+    "TITLE": {
+      "from": "answers.title",
+      "required": true,
+      "kind": "text"
+    },
+    "LOCALES": {
+      "from": "derived.localesLiteral",
+      "required": true,
+      "kind": "text"
+    },
+    "OWNER": {
+      "from": "answers.owner",
+      "required": true,
+      "kind": "text"
+    }
+  },
+  "files": [
+    {
+      "path": ".env.example"
+    },
+    {
+      "path": ".github/workflows/ci.yml"
+    },
+    {
+      "path": ".gitignore"
+    },
+    {
+      "path": "apps/web/app/[locale]/layout.tsx"
+    },
+    {
+      "path": "apps/web/app/[locale]/page.tsx"
+    },
+    {
+      "path": "apps/web/app/[locale]/request-access/page.tsx"
+    },
+    {
+      "path": "apps/web/app/api/access-request/start/route.ts"
+    },
+    {
+      "path": "apps/web/app/api/access-request/verify/route.ts"
+    },
+    {
+      "path": "apps/web/app/components/container.tsx"
+    },
+    {
+      "path": "apps/web/app/components/cta.tsx"
+    },
+    {
+      "path": "apps/web/app/components/mark.tsx"
+    },
+    {
+      "path": "apps/web/app/components/prose.tsx"
+    },
+    {
+      "path": "apps/web/app/components/request-access-form.tsx"
+    },
+    {
+      "path": "apps/web/app/components/site-footer.tsx"
+    },
+    {
+      "path": "apps/web/app/components/site-header.tsx"
+    },
+    {
+      "path": "apps/web/app/globals.css"
+    },
+    {
+      "path": "apps/web/app/layout.tsx"
+    },
+    {
+      "path": "apps/web/app/robots.ts"
+    },
+    {
+      "path": "apps/web/app/sitemap.ts"
+    },
+    {
+      "path": "apps/web/i18n/navigation.ts"
+    },
+    {
+      "path": "apps/web/i18n/request.ts"
+    },
+    {
+      "path": "apps/web/i18n/routing.ts"
+    },
+    {
+      "path": "apps/web/lib/access-request.ts"
+    },
+    {
+      "path": "apps/web/lib/config.ts"
+    },
+    {
+      "path": "apps/web/lib/seo.ts"
+    },
+    {
+      "path": "apps/web/messages/en.json"
+    },
+    {
+      "path": "apps/web/messages/es.json",
+      "when": {
+        "answer": "answers.languages",
+        "includes": "es"
+      }
+    },
+    {
+      "path": "apps/web/next-env.d.ts"
+    },
+    {
+      "path": "apps/web/next.config.ts"
+    },
+    {
+      "path": "apps/web/package.json"
+    },
+    {
+      "path": "apps/web/proxy.ts"
+    },
+    {
+      "path": "apps/web/test/config.test.ts"
+    },
+    {
+      "path": "apps/web/test/lib/access-request.test.ts"
+    },
+    {
+      "path": "apps/web/test/messages.test.ts"
+    },
+    {
+      "path": "apps/web/test/test-support/server-only.ts"
+    },
+    {
+      "path": "apps/web/tsconfig.json"
+    },
+    {
+      "path": "apps/web/vitest.config.ts"
+    },
+    {
+      "path": "package.json"
+    },
+    {
+      "path": "packages/contracts/package.json"
+    },
+    {
+      "path": "packages/contracts/src/access-request/start.ts"
+    },
+    {
+      "path": "packages/contracts/src/access-request/verify.ts"
+    },
+    {
+      "path": "packages/contracts/src/index.ts"
+    },
+    {
+      "path": "packages/contracts/test/access-request.test.ts"
+    },
+    {
+      "path": "packages/contracts/tsconfig.json"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "generated": true
+    },
+    {
+      "path": "pnpm-workspace.yaml"
+    },
+    {
+      "path": "services/api/package.json"
+    },
+    {
+      "path": "services/api/src/app/config.ts"
+    },
+    {
+      "path": "services/api/src/app/main.ts"
+    },
+    {
+      "path": "services/api/src/app/server.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/application/ports.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/application/start-access-request.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/application/verify-access-request.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/domain/access-request.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/domain/errors.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/domain/verification-code.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/infrastructure/access-request-model.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/infrastructure/email-templates.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/infrastructure/hmac-token-signer.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/infrastructure/mailers.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/infrastructure/mongoose-access-request-repository.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/infrastructure/mongoose-send-budget.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/infrastructure/random-code-generator.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/infrastructure/send-budget-model.ts"
+    },
+    {
+      "path": "services/api/src/contexts/access-request/infrastructure/system-clock.ts"
+    },
+    {
+      "path": "services/api/src/controllers/access-request/deps.ts"
+    },
+    {
+      "path": "services/api/src/controllers/access-request/index.ts"
+    },
+    {
+      "path": "services/api/src/controllers/access-request/map-error.ts"
+    },
+    {
+      "path": "services/api/src/controllers/access-request/start.ts"
+    },
+    {
+      "path": "services/api/src/controllers/access-request/verify.ts"
+    },
+    {
+      "path": "services/api/src/middlewares/rate-limit.ts"
+    },
+    {
+      "path": "services/api/test/app/config.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/access-request/application/flow.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/access-request/application/replay.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/access-request/domain/access-request.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/access-request/domain/verification-code.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/access-request/infrastructure/hmac-token-signer.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/access-request/infrastructure/mongoose-access-request-repository.test.ts"
+    },
+    {
+      "path": "services/api/test/controllers/access-request.test.ts"
+    },
+    {
+      "path": "services/api/test/test-support/fakes.ts"
+    },
+    {
+      "path": "services/api/test/test-support/harness.ts"
+    },
+    {
+      "path": "services/api/tsconfig.json"
+    },
+    {
+      "path": "services/api/vitest.config.ts"
+    },
+    {
+      "path": "tsconfig.base.json"
+    },
+    {
+      "path": "turbo.json"
+    }
+  ],
+  "gates": ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test"],
+  "transforms": [
+    {
+      "find": " (D-\\d{3})",
+      "replace": "",
+      "lossy": true
+    }
+  ],
+  "tokenise": ["NAME", "NAME_UPPER", "OWNER", "TITLE", "LOCALES"],
+  "imported": {
+    ".env.example": "sha256-b11aad2e0b15ad0c8ac8297bba9fcf251d9a7710fddba8e766feeebb743d414d",
+    ".github/workflows/ci.yml": "sha256-c499ee89461dcb777e55cc93597cd875309df4a746485430619680994de363fe",
+    ".gitignore": "sha256-61c743c41a2e9711e175d2511ee5f278ba6003b6a0b78d66d222ee2b1e01c411",
+    "apps/web/app/[locale]/layout.tsx": "sha256-066c59662438300f407deb12dfd52af83fc117d6e73f295d932973521058b179",
+    "apps/web/app/[locale]/page.tsx": "sha256-a3c492742654945d6341e8a6abcfb155b6f706bcb78862a5976c9662c609d560",
+    "apps/web/app/[locale]/request-access/page.tsx": "sha256-e18c05633f224fa2f3fa77aca849c4dc256f7a53a7aae92dea73ab6a64a0a656",
+    "apps/web/app/api/access-request/start/route.ts": "sha256-1c9a712a6b75dd0929d62d5290fdb7d218bdc7e7cf0628e94a2ed9c187f02366",
+    "apps/web/app/api/access-request/verify/route.ts": "sha256-424c2c70ba75d6906f37bc5b5df0fad1c8903e1abd42931d87555d4b8502c4f2",
+    "apps/web/app/components/container.tsx": "sha256-637d286c80a5d762d18bcf312c59a90c05c2aadf12e17042ff900cd91de85ca8",
+    "apps/web/app/components/cta.tsx": "sha256-bfbef7e98fc75545af61b0528133a7b07e830e6c6fa1fa27a60e8deebde94243",
+    "apps/web/app/components/mark.tsx": "sha256-2b87bd03605521a7f74997dcfcf5d659b1a2ead7724c8fd415b2150e157a122b",
+    "apps/web/app/components/prose.tsx": "sha256-6041e9640d08549970c8a916f2682805601bee91d00507868805c8b3ca34b2ce",
+    "apps/web/app/components/request-access-form.tsx": "sha256-8c7af0f3303898f3d66805f5e2b01008e783b1ebe5575d84009b66a189dfb712",
+    "apps/web/app/components/site-footer.tsx": "sha256-67911237acaeddb27ee7a34411639147b3bda6060fc324ca42239b8bf23149fb",
+    "apps/web/app/components/site-header.tsx": "sha256-3fa72c7bdc5fd83b506c6d7a6b139839d6c1311430548352ef327617de8008a9",
+    "apps/web/app/globals.css": "sha256-ca1a041e7becf1248309e7aa88552b0ad4bfe23be952350be42fc1a5db2d06c7",
+    "apps/web/app/layout.tsx": "sha256-d5db523e7aec01f06323f5efd064dcceb73de99004de2f188d40cada649e3b43",
+    "apps/web/app/robots.ts": "sha256-ae790fac6712d1bc4871a7443ee40030fe4387c80d6db48a0b099ada508d96e4",
+    "apps/web/app/sitemap.ts": "sha256-f9faeb6cffa97a0f53e53fc9ce6bc173aeb834d008863b406fe00f1e1fc3a493",
+    "apps/web/i18n/navigation.ts": "sha256-c6d8cf6ab1929af9c84281bfc8aa64e1a1a7e44436c8ed91a9a3fe86ac6a7b37",
+    "apps/web/i18n/request.ts": "sha256-11704e3c8437782daf6c6983f7997d202c5855eeda91a6dbecce87c2b57764c2",
+    "apps/web/i18n/routing.ts": "sha256-41715c9b04712b50b3cb4b561b7a1e95e4084acb1c62f616523186d8cfb83a2f",
+    "apps/web/lib/access-request.ts": "sha256-955f2a6b8f8570517e17a75884e130e056b6420bf463c35a3092833e1c369bbb",
+    "apps/web/lib/config.ts": "sha256-b8b8bb1dab42a5bf2767ddbba62420580ae4ed9f9a9dd5543ba0f2b455c48af8",
+    "apps/web/lib/seo.ts": "sha256-6bc3f15965422a79275a533f0ba34f0e10d6c6ae977474c410d9873dbc623b46",
+    "apps/web/messages/en.json": "sha256-4a4a1d08bafd55a55721b0428a6976f07f6b56635ac31028dbf1b68962fcd08b",
+    "apps/web/messages/es.json": "sha256-8ed65b95815955531cf4bdafd6c048f58b45b033c35688f1ce4beadde00b8701",
+    "apps/web/next-env.d.ts": "sha256-1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b",
+    "apps/web/next.config.ts": "sha256-c1ea2a7fc2e940bcbc3f8e52793786490b93670f0f1a4213b710d482ab720af1",
+    "apps/web/package.json": "sha256-002bbf5b728f1d6fc6715fc0bd64e7eb9f3521efc7b5b85522446a23c484c3bf",
+    "apps/web/proxy.ts": "sha256-d2aad82ae7875a0c9d097428193b6c497f8034113bc23cb7cfb66a83283dcc2d",
+    "apps/web/test/config.test.ts": "sha256-6dfb06dd470bf18703fd157d7e491ca478f6c219e324f74c4d29484cc8b57334",
+    "apps/web/test/lib/access-request.test.ts": "sha256-3d9953746b555747bfc6143309847b4bd4fb95a46a8db25752dfe7253237b2b1",
+    "apps/web/test/messages.test.ts": "sha256-259a2dd15a1ae7fea889e585fe790f52bca7c870626c2479096cba087fb510ed",
+    "apps/web/test/test-support/server-only.ts": "sha256-8d705fe68b22f42dcc984e42193a6502e9a628f0b5486cc67439dabbd4c87afd",
+    "apps/web/tsconfig.json": "sha256-a6269becfdd24185865675919e83f0136792f6a55797a2176dc71bc4f8fbd407",
+    "apps/web/vitest.config.ts": "sha256-ab7e2631e1e5c9e8bed3ffa39fa6162daa16f59872acf1ce83857755eea3c2fc",
+    "package.json": "sha256-198038a18753a772d304a6a988a63229c53fadfb5cea72dbf5d871e0ffa7572b",
+    "packages/contracts/package.json": "sha256-69a4810fa334c852bb243ba5303a8547b3cbb411b46a34fa3a1cc9b6a3e54b99",
+    "packages/contracts/src/access-request/start.ts": "sha256-bc60e092811b78722173b20d653d75cbf6ddb55f4664e6e99e7df79c29884f63",
+    "packages/contracts/src/access-request/verify.ts": "sha256-3f3287dd21e40cf665f9f0dcf847e238db4dd973de9210218c5f6fce76c14606",
+    "packages/contracts/src/index.ts": "sha256-6714f8ebc127e7d333cec133353f53e09ee026a8d0cda48f2be0f5b5f87dcd18",
+    "packages/contracts/test/access-request.test.ts": "sha256-def97120b58c87d7dbce91258451e227143a6b6dfcd10729821654c58de22a1a",
+    "packages/contracts/tsconfig.json": "sha256-902aedcca69381b282b4bfb47a017b7729458c3a65238bb580f5e1146f30d956",
+    "pnpm-workspace.yaml": "sha256-6b12ff1cf6461789ab651f1cda457c87690f9651fae84a877861b68ba03c8645",
+    "services/api/package.json": "sha256-ab68e0bc2a387a317caea60d96f2dd13b3791d5313a3ed6cd0effcd6c71f177e",
+    "services/api/src/app/config.ts": "sha256-e26192e1bf1b7c3dbc617055162d903d6bbb7655e467f9e7f1403731ce8126c6",
+    "services/api/src/app/main.ts": "sha256-2054fb1c06d52889d207a3fd2a324737681c29b63048d712eb8d79e55a1f793e",
+    "services/api/src/app/server.ts": "sha256-a8849f2ad4dc9c35be65de04d6081f999a7f3580e53ced89882923ffb5ee4984",
+    "services/api/src/contexts/access-request/application/ports.ts": "sha256-014f42b88f88f4b98a634078837013f5f53522889de27f982220981be725de8a",
+    "services/api/src/contexts/access-request/application/start-access-request.ts": "sha256-b68e2256c73bdecf10b7dbdab92b7da3b1e697c24c733a731dc6b8acbfecb11c",
+    "services/api/src/contexts/access-request/application/verify-access-request.ts": "sha256-8c9f5addd9e42d1d6a73c296800556c3693f01bd15ae8c27c402ae5bea861730",
+    "services/api/src/contexts/access-request/domain/access-request.ts": "sha256-d6eb7715f587e4785964d9a339c49cced1ac90ab6dff25cec4a90f04c39e717f",
+    "services/api/src/contexts/access-request/domain/errors.ts": "sha256-5a933f7139c2121c78b88d2fbe8e0808af3c278c32407d02d5a3634bdf360201",
+    "services/api/src/contexts/access-request/domain/verification-code.ts": "sha256-8ca474c5b71d0803d3a70dfb4636085bf24173997e9025dd4aa1d1f00f3efe4e",
+    "services/api/src/contexts/access-request/infrastructure/access-request-model.ts": "sha256-ee2193b09035088acf9c65d2605df96210c6f8975d75a4a8c13db7991dd35257",
+    "services/api/src/contexts/access-request/infrastructure/email-templates.ts": "sha256-9ac88b0a101a74f86e2ba6efe9b9fc46471264690264932371298b6b0c36d1f8",
+    "services/api/src/contexts/access-request/infrastructure/hmac-token-signer.ts": "sha256-9600e6d236cb516c0abcaf27e9e0952a4d30a9a56e8477bfbb4fcb61e8b25ff4",
+    "services/api/src/contexts/access-request/infrastructure/mailers.ts": "sha256-cee19e0d926df8da03c4674c27203c21cad87d8d9b761f4925575547662befef",
+    "services/api/src/contexts/access-request/infrastructure/mongoose-access-request-repository.ts": "sha256-7f5c094f3776fc5df9bcd6a60a788f270ccac514c3e106f6e4ef134093123cb0",
+    "services/api/src/contexts/access-request/infrastructure/mongoose-send-budget.ts": "sha256-9fa0a4e58166197cb5e7dc9c9877f91f6db8e7cc8ba59213e0cf1b63635551d5",
+    "services/api/src/contexts/access-request/infrastructure/random-code-generator.ts": "sha256-9bd53d168bbb4f6e009f51a1026ae92c1d4f7950462723bfce5fc746fdeab4ba",
+    "services/api/src/contexts/access-request/infrastructure/send-budget-model.ts": "sha256-559e5e59e548a9dcee687b9feacb91e8826d80a282bf01e79106c755604d5a21",
+    "services/api/src/contexts/access-request/infrastructure/system-clock.ts": "sha256-eb815a54a6a71f34df58aec0741624ae0174a5db60315413f8d804f2b8468d26",
+    "services/api/src/controllers/access-request/deps.ts": "sha256-2bcb9d2a58b74597cec6dcd89bb15490824f4b161055d0f0ed167c984db00a8c",
+    "services/api/src/controllers/access-request/index.ts": "sha256-190211b82b97ef698b10ad953a431400051d692f5efb862f231eb2a07e90f2f5",
+    "services/api/src/controllers/access-request/map-error.ts": "sha256-20b9b606af8b4b9d2dc3a7702b46ac66b8c642824ac7469889f6731cc2e1e6e3",
+    "services/api/src/controllers/access-request/start.ts": "sha256-fbc845c2af58c52a5a0a8bcdc44983932367f06ee139fb55fe313c256f23a30a",
+    "services/api/src/controllers/access-request/verify.ts": "sha256-bcabf5d1a9697ee6ef96b87a824559de045330df71ab8131af2b0cde19b28eac",
+    "services/api/src/middlewares/rate-limit.ts": "sha256-3afb2491b44ccce5e1015246de009f01656ff87bd5c4be4d382fa68cfe2c0b5e",
+    "services/api/test/app/config.test.ts": "sha256-1fa77ed2c4a36c171b09304b739ce4456b45f64b9179ef9fbbf1548f31aae40b",
+    "services/api/test/contexts/access-request/application/flow.test.ts": "sha256-9f73219b4a277e0a963b4df7d3c3af737d660054dd1556867fe1fc624903721e",
+    "services/api/test/contexts/access-request/application/replay.test.ts": "sha256-618ca3aa6118b556dbc5d5730ed76b2c16c90821eac97f76d537949dd4deff87",
+    "services/api/test/contexts/access-request/domain/access-request.test.ts": "sha256-56a236ec1e631b5d0d2a368cbc12cff62ffcc3c7e3a320df002e5c1364a8283f",
+    "services/api/test/contexts/access-request/domain/verification-code.test.ts": "sha256-b09144f59f9b0cc79202bd14c3ae2154262d47dee133834c1dfba8f69646883b",
+    "services/api/test/contexts/access-request/infrastructure/hmac-token-signer.test.ts": "sha256-6d81bfd6029c983f421d0d14b34933989b30f771e3cc4b509bfebc42b386aeb2",
+    "services/api/test/contexts/access-request/infrastructure/mongoose-access-request-repository.test.ts": "sha256-0a419d71fab3f0267eff0791a4eb83da7ce465852ebca8fcb226e6e74c6f82bc",
+    "services/api/test/controllers/access-request.test.ts": "sha256-6c0b74e9d863a5f1e5e158870096e587e5430f727fe3e57e96b2c7212293834f",
+    "services/api/test/test-support/fakes.ts": "sha256-756ae93ac36ae23dcafe07e3bf8ce2c459f3a0fd61773c4bff9a4541a6507c89",
+    "services/api/test/test-support/harness.ts": "sha256-c3077c98f56f1d1200e9ace157fa88becb1421f41696df5d1412c9127663713d",
+    "services/api/tsconfig.json": "sha256-902aedcca69381b282b4bfb47a017b7729458c3a65238bb580f5e1146f30d956",
+    "services/api/vitest.config.ts": "sha256-cffa89840902483b3f303da5bdc0b8c787a2b384c13fe4bbbcec7f9be31fc7c4",
+    "tsconfig.base.json": "sha256-1e6c315e0e2c7c6345a79ee9cc6a5d49db8934518960529ee230040f9f5c08a2",
+    "turbo.json": "sha256-8e42113da3890ac53397e69332e7b9e8c9fa4612b072198548adf2d279aeee61"
+  },
+  "curated": {
+    ".env.example": "sha256-3a7c38428aafa878b9a76731c645f2b76ca6f3f9407a2b142043f07153d1a880",
+    ".github/workflows/ci.yml": "sha256-9d4033c2cc0873c504bdf53f80651312fe3e9b1d8787297991bfcffda38614ed",
+    "apps/web/app/[locale]/layout.tsx": "sha256-be2351c3f7a3263e51226f9ffb6b4b39538bc3164dbc6662451fed71cb683c55",
+    "apps/web/app/[locale]/page.tsx": "sha256-00e2828950084a2c73eff71aa12dc06f3cca6d8a84899e89aa695c64b8fa871f",
+    "apps/web/app/[locale]/request-access/page.tsx": "sha256-052fd6ed9ebb4dad5d64dc1d77191e7d8b5d1e2b0e1297498e4d7184fb2c18aa",
+    "apps/web/app/components/mark.tsx": "sha256-be7de6a7560ce793d1efac28233f512271c47f5f984341fbccc5d22177a9a17e",
+    "apps/web/app/components/request-access-form.tsx": "sha256-288a332a8ccdcc00f18a6ad8f7373cb5009a3f140aaed19fef47e3977ea7c21c",
+    "apps/web/app/globals.css": "sha256-3aa5a3df5e11bc842f8c6e9e840bcce18903a45150908d21f310758fda9f965d",
+    "apps/web/app/sitemap.ts": "sha256-07aea841d627a1608f7247845707ed823f7e90f30835fe2b94ee1249097d65e6",
+    "apps/web/i18n/routing.ts": "sha256-ed5512aa76e0c780905d12f6a4649c89af03607200f2f83b45a2f0e6e450952b",
+    "apps/web/lib/access-request.ts": "sha256-7288707540a200d411bd0e0ec337616f1c358391b659b7f7b4bc62b2bc597c89",
+    "apps/web/lib/config.ts": "sha256-2eff131f7e5c051f296ccefebaabf756002f6808e19a75fb5ddc389020408b99",
+    "apps/web/lib/seo.ts": "sha256-0686c3069ef6fd1a588006a1968e6d5dcb0153c17e5d77e9092ac5ab7169f2d0",
+    "apps/web/messages/en.json": "sha256-2681409c62e7fd30d2e4e890cab28775969150fb3a98d85beeedabfa9e73ca4d",
+    "apps/web/messages/es.json": "sha256-0acd559dd346f02f253a0f6588bdb2be40d4c0cbeba89a119f53886b56d6e6ca",
+    "apps/web/test/config.test.ts": "sha256-64f75b29f8690637a1fe7d5e6be69bdf5163488c215a143d6fab5101c10cc5f0",
+    "apps/web/test/messages.test.ts": "sha256-10147eec731db4fa45e717ed47ef2e81e12b23ea0a36faaa23911f55eda5aad9",
+    "pnpm-workspace.yaml": "sha256-c414681d77f8003dcb6de451c8aeaff2a0608bb8d259de57d7eec057f1474af8",
+    "services/api/src/contexts/access-request/application/ports.ts": "sha256-7248ffbf154c88471afdf2f415d90491db29d2e8cb1cc85269992531c3adbc9e",
+    "services/api/src/contexts/access-request/infrastructure/access-request-model.ts": "sha256-ba884bab24636572634cf9f6660ecf60172b963a0374b443f82c14c7cadee16c",
+    "services/api/src/contexts/access-request/infrastructure/email-templates.ts": "sha256-87faeab81162dedadf1203707de3066e4f37c946fa2242e330d88c28363c9808",
+    "services/api/src/contexts/access-request/infrastructure/mongoose-send-budget.ts": "sha256-aea55f954649cd5a47f108a930666282fb65669f602961d761628dbeb9bfeb98",
+    "services/api/src/contexts/access-request/infrastructure/send-budget-model.ts": "sha256-861e673cf2f7ff1ecc3066761b59ca9c0151296c5f45c45293bb68facf3aa732",
+    "services/api/src/controllers/access-request/map-error.ts": "sha256-f9432ea1f166b7f504197cf98afdc30b49b0c9a25d2d7392ff6a711806e8522f",
+    "services/api/test/contexts/access-request/application/flow.test.ts": "sha256-e5fb38096ac897f11997b5e003a96c6a8f64aaa0dffd97d7e666348ed26dc2ee",
+    "services/api/test/contexts/access-request/infrastructure/mongoose-access-request-repository.test.ts": "sha256-414592e4dba41706d927cf4b70e775e267b97f579f77e8bef63f2a9b88f9c743",
+    "services/api/test/controllers/access-request.test.ts": "sha256-9b00ce282065dc78db0d6e8bc8b532ec9d9f490eb6d8e7a444e51b0c30ee6b06",
+    "apps/web/app/components/site-footer.tsx": "sha256-78875b6d94071eb6eecc8ab43537035323d4f35b3f43af7ae3cbb9ecd71797b3"
+  }
+}

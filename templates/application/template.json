@@ -1,0 +1,215 @@
+{
+  "schema": 1,
+  "name": "application",
+  "version": "0.1.0",
+  "description": "A whole product: the API service, composed, plus a Next.js web tier that reaches it only on the server, refuses every page by default, and switches exhaustively over the contract it shares with the API.",
+  "composes": ["api-service"],
+  "slots": {
+    "NAME": {
+      "from": "answers.name",
+      "required": true,
+      "kind": "text"
+    },
+    "API_PORT": {
+      "from": "answers.ports.api",
+      "required": true,
+      "kind": "text"
+    },
+    "WEB_PORT": {
+      "from": "answers.ports.web",
+      "required": true,
+      "kind": "text"
+    }
+  },
+  "files": [
+    {
+      "path": "apps/web/.gitignore"
+    },
+    {
+      "path": "apps/web/app/actions/profile.ts"
+    },
+    {
+      "path": "apps/web/app/components/api-failure-card.tsx"
+    },
+    {
+      "path": "apps/web/app/components/auth-not-configured.tsx"
+    },
+    {
+      "path": "apps/web/app/components/language-choice.tsx"
+    },
+    {
+      "path": "apps/web/app/components/sign-out-link.tsx"
+    },
+    {
+      "path": "apps/web/app/error.tsx"
+    },
+    {
+      "path": "apps/web/app/globals.css"
+    },
+    {
+      "path": "apps/web/app/layout.tsx"
+    },
+    {
+      "path": "apps/web/app/no-access/page.tsx"
+    },
+    {
+      "path": "apps/web/app/not-found.tsx"
+    },
+    {
+      "path": "apps/web/app/page.tsx"
+    },
+    {
+      "path": "apps/web/app/sign-in/[[...sign-in]]/page.tsx"
+    },
+    {
+      "path": "apps/web/dev-session/aliases.ts"
+    },
+    {
+      "path": "apps/web/dev-session/bind.ts"
+    },
+    {
+      "path": "apps/web/dev-session/clerk-nextjs-server.ts"
+    },
+    {
+      "path": "apps/web/dev-session/clerk-nextjs.ts"
+    },
+    {
+      "path": "apps/web/dev-session/serve.ts"
+    },
+    {
+      "path": "apps/web/global.d.ts"
+    },
+    {
+      "path": "apps/web/i18n/accept-language.ts"
+    },
+    {
+      "path": "apps/web/i18n/catalogues.ts"
+    },
+    {
+      "path": "apps/web/i18n/locales.ts"
+    },
+    {
+      "path": "apps/web/i18n/request.ts"
+    },
+    {
+      "path": "apps/web/lib/api-failure.ts"
+    },
+    {
+      "path": "apps/web/lib/api.ts"
+    },
+    {
+      "path": "apps/web/lib/auth-enabled.ts"
+    },
+    {
+      "path": "apps/web/lib/config.ts"
+    },
+    {
+      "path": "apps/web/lib/example-item-status.ts"
+    },
+    {
+      "path": "apps/web/lib/example-items.ts"
+    },
+    {
+      "path": "apps/web/lib/fetch-failure.ts"
+    },
+    {
+      "path": "apps/web/lib/owner-token.ts"
+    },
+    {
+      "path": "apps/web/lib/profile.ts"
+    },
+    {
+      "path": "apps/web/messages/en.json"
+    },
+    {
+      "path": "apps/web/messages/es.json",
+      "when": {
+        "answer": "answers.languages",
+        "includes": "es"
+      }
+    },
+    {
+      "path": "apps/web/next-env.d.ts"
+    },
+    {
+      "path": "apps/web/next.config.ts"
+    },
+    {
+      "path": "apps/web/package.json"
+    },
+    {
+      "path": "apps/web/postcss.config.mjs"
+    },
+    {
+      "path": "apps/web/proxy.ts"
+    },
+    {
+      "path": "apps/web/test/app/actions/profile.test.ts"
+    },
+    {
+      "path": "apps/web/test/dev-session/aliases.test.ts"
+    },
+    {
+      "path": "apps/web/test/dev-session/bind.test.ts"
+    },
+    {
+      "path": "apps/web/test/dev-session/serve.test.ts"
+    },
+    {
+      "path": "apps/web/test/dev-session/stand-ins.test.ts"
+    },
+    {
+      "path": "apps/web/test/i18n/accept-language.test.ts"
+    },
+    {
+      "path": "apps/web/test/lib/api-failure.test.ts"
+    },
+    {
+      "path": "apps/web/test/lib/api.test.ts"
+    },
+    {
+      "path": "apps/web/test/lib/config.test.ts"
+    },
+    {
+      "path": "apps/web/test/lib/example-item-status.test.ts"
+    },
+    {
+      "path": "apps/web/test/lib/owner-token.test.ts"
+    },
+    {
+      "path": "apps/web/test/lib/where-the-caller-comes-from.test.ts"
+    },
+    {
+      "path": "apps/web/test/messages.test.ts"
+    },
+    {
+      "path": "apps/web/test/proxy.test.ts"
+    },
+    {
+      "path": "apps/web/test/test-support/server-only.ts"
+    },
+    {
+      "path": "apps/web/tsconfig.json"
+    },
+    {
+      "path": "apps/web/vitest.config.ts"
+    },
+    {
+      "path": "docs/web.md"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "generated": true,
+      "replaces": true
+    }
+  ],
+  "gates": ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test"],
+  "transforms": [
+    {
+      "find": " (D-\\d{3})",
+      "replace": "",
+      "lossy": true
+    }
+  ],
+  "tokenise": ["NAME"]
+}

@@ -1,0 +1,23 @@
+packages:
+  - "apps/*"
+  - "services/*"
+  - "packages/*"
+
+# Native postinstall build scripts pnpm is allowed to run (supply-chain gate). Mirrors __MKTRUE_NAME__'s
+# rule: anything new that wants a build script is a deliberate edit here, not a default yes.
+# `sharp` is Next image optimization; `esbuild` powers Vitest. `mongodb-memory-server` is declined:
+# its postinstall only pre-downloads the mongod binary the access-request repository's integration
+# tests run against, which the library fetches on first use anyway — install-time code execution
+# for a download that happens regardless is exactly what this list exists to refuse.
+allowBuilds:
+  # Both arrived with next-intl and both are declined. Each publishes its binary as a
+  # separate per-platform package that pnpm installs directly; the postinstall script is only the
+  # node-gyp fallback for platforms with no prebuild, and this repo builds on linux-x64-glibc where
+  # a prebuild exists. Declining costs nothing here and keeps two native compile steps out of the
+  # Docker build. If a future platform has no prebuild, next-intl's dev watcher is what breaks, and
+  # it breaks loudly.
+  "@parcel/watcher": false
+  "@swc/core": false
+  esbuild: true
+  mongodb-memory-server: false
+  sharp: true

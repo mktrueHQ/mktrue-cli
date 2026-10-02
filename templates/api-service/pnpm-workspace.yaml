@@ -1,0 +1,14 @@
+packages:
+  - "apps/*"
+  - "services/*"
+  - "packages/*"
+
+# Packages allowed to run install scripts. Adding one is a deliberate edit, never a default yes.
+allowBuilds:
+  # A web tier composed into apps/ brings both through next-intl. Each ships its binary as a
+  # prebuilt per-platform package; the declined script is only a from-source fallback.
+  "@parcel/watcher": false
+  "@swc/core": false
+  esbuild: true
+  # Its postinstall only pre-downloads mongod, which the library fetches on first use anyway.
+  mongodb-memory-server: false

@@ -1,0 +1,39 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build & cache
+.next/
+dist/
+build/
+out/
+.turbo/
+*.tsbuildinfo
+coverage/
+
+# env & secrets — never committed (Mongo / Resend / the HMAC token secret)
+.env
+.env.*
+!.env.example
+*.local
+
+# personal claude-code settings stay per-machine
+.claude/settings.local.json
+
+# The impeccable design skill is installed at user scope (~/.claude/skills/impeccable), not
+# vendored here: 18 MB, a self-downloading binary, and four agents no backend slice needs.
+.claude/skills/impeccable/
+# Machine state, not configuration: a session-keyed cache of per-file edit counts under absolute
+# paths, and this machine's hook consent. Same reason `.claude/settings.local.json` is above.
+.impeccable/hook.cache.json
+.impeccable/config.local.json
+
+# os & editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# claude code worktrees (EnterWorktree / --worktree) live inside the checkout
+.claude/worktrees/

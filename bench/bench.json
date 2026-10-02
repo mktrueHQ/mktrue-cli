@@ -1,0 +1,421 @@
+{
+  "schema": 1,
+  "version": "0.3.0",
+  "slotSyntax": "__MKTRUE_<KEY>__",
+  "slots": {
+    "NAME": {
+      "from": "answers.name",
+      "required": true,
+      "kind": "text"
+    },
+    "PURPOSE": {
+      "from": "answers.purpose",
+      "required": true,
+      "kind": "text"
+    },
+    "OWNER": {
+      "from": "answers.owner",
+      "required": true,
+      "kind": "text"
+    },
+    "AUDIENCE_TEST": {
+      "from": "answers.audienceTest",
+      "required": true,
+      "kind": "text"
+    },
+    "STAKES": {
+      "from": "answers.stakes",
+      "required": true,
+      "kind": "text"
+    },
+    "DATA_CLASSES": {
+      "from": "answers.dataClasses",
+      "required": true,
+      "kind": "list"
+    },
+    "AUTH": {
+      "from": "answers.auth",
+      "required": true,
+      "kind": "text"
+    },
+    "LANGUAGES": {
+      "from": "answers.languages",
+      "required": true,
+      "kind": "list"
+    },
+    "GATES": {
+      "from": "derived.gates",
+      "required": true,
+      "kind": "list"
+    },
+    "AUDIT_TRIGGERS": {
+      "from": "config.auditTriggers",
+      "required": true,
+      "kind": "list"
+    },
+    "BASE_BRANCH": {
+      "from": "config.baseBranch",
+      "required": true,
+      "kind": "text"
+    },
+    "BUDGET_RULES": {
+      "from": "config.budgets.rules",
+      "required": true,
+      "kind": "number"
+    },
+    "BUDGET_STATE": {
+      "from": "config.budgets.state",
+      "required": true,
+      "kind": "number"
+    },
+    "BUDGET_DECISION": {
+      "from": "config.budgets.decision",
+      "required": true,
+      "kind": "number"
+    },
+    "KIT_VERSION": {
+      "from": "derived.kitVersion",
+      "required": true,
+      "kind": "text"
+    },
+    "ROLE_ID": {
+      "from": "derived.roleId",
+      "required": true,
+      "kind": "path"
+    },
+    "COMMAND_ID": {
+      "from": "derived.commandId",
+      "required": true,
+      "kind": "path"
+    },
+    "PATH_STATE": {
+      "from": "config.paths.state",
+      "required": true,
+      "kind": "path"
+    },
+    "PATH_ROADMAP": {
+      "from": "config.paths.roadmap",
+      "required": true,
+      "kind": "path"
+    },
+    "PATH_DECISIONS_INDEX": {
+      "from": "config.paths.decisionsIndex",
+      "required": true,
+      "kind": "path"
+    },
+    "PATH_DECISIONS": {
+      "from": "config.paths.decisions",
+      "required": true,
+      "kind": "path"
+    },
+    "PATH_DESIGN": {
+      "from": "config.paths.design",
+      "required": true,
+      "kind": "path"
+    },
+    "PATH_LOG": {
+      "from": "config.paths.log",
+      "required": true,
+      "kind": "path"
+    },
+    "RELEASE_VERSION": {
+      "from": "release.version",
+      "required": true,
+      "kind": "text"
+    },
+    "RELEASE_SHA256": {
+      "from": "release.sha256",
+      "required": true,
+      "kind": "text"
+    }
+  },
+  "roles": [
+    {
+      "id": "architect",
+      "title": "Architect",
+      "body": "agents/architect.md",
+      "description": "Designs before anyone builds \u2014 boundaries, data shapes, ports, and the milestone plan in docs/design/. Use at the start of any milestone or whenever a change spans more than one boundary. Produces a plan and a decision list; writes no production code.",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "model": "opus",
+      "effort": "xhigh",
+      "slots": ["NAME", "PURPOSE"],
+      "report": "$SLICE/architect.md"
+    },
+    {
+      "id": "implementer",
+      "title": "Implementer",
+      "body": "agents/implementer.md",
+      "description": "Builds one focused, well-tested slice from $SLICE/brief.md, following CLAUDE.md and the milestone plan. The lead delegates non-trivial changes here, then hands the result to the reviewer. Does not commit or open pull requests.",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "model": "opus",
+      "effort": "high",
+      "slots": ["GATES"],
+      "report": "$SLICE/implementer.md"
+    },
+    {
+      "id": "ui-engineer",
+      "title": "UI engineer",
+      "body": "agents/ui-engineer.md",
+      "description": "Builds and reviews the user-facing surface \u2014 screens, charts, theming, accessibility, offline behaviour. Use for any interface slice or responsive work.",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "model": "opus",
+      "effort": "high",
+      "slots": ["NAME", "AUDIENCE_TEST", "LANGUAGES"],
+      "report": "$SLICE/ui-engineer.md"
+    },
+    {
+      "id": "security-auditor",
+      "title": "Security auditor",
+      "body": "agents/security-auditor.md",
+      "description": "Defensive security pass. Mandatory before merging anything touching a trigger surface. Read-only; finds and explains weaknesses, does not write exploits.",
+      "tools": ["Read", "Grep", "Glob", "Bash"],
+      "model": "opus",
+      "effort": "high",
+      "slots": ["NAME", "STAKES", "DATA_CLASSES", "AUDIT_TRIGGERS"],
+      "report": "$SLICE/audit.md"
+    },
+    {
+      "id": "reviewer",
+      "title": "Reviewer",
+      "body": "agents/reviewer.md",
+      "description": "Critiques an implemented slice against CLAUDE.md \u2014 exposed surface, correctness, architecture, tests, simplicity \u2014 without editing anything. Verifies by planting deliberate bugs. Read-only; ranks findings by severity and ends with a verdict.",
+      "tools": ["Read", "Bash", "Grep", "Glob"],
+      "model": "opus",
+      "effort": "high",
+      "slots": [],
+      "report": "$SLICE/review.md"
+    },
+    {
+      "id": "docs-writer",
+      "title": "Docs writer",
+      "body": "agents/docs-writer.md",
+      "description": "Keeps the documentation honest \u2014 README, the decision index, plans, the roadmap, the environment example, and docs/STATE.md. Use at milestone boundaries and whenever behaviour has drifted from what the docs claim.",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      "model": "sonnet",
+      "effort": "low",
+      "slots": ["NAME", "OWNER", "BUDGET_STATE", "BUDGET_RULES"],
+      "report": "$SLICE/docs.md"
+    }
+  ],
+  "contracts": [
+    {
+      "id": "loop-contract",
+      "title": "The loop contract",
+      "body": "loop-contract.md",
+      "renderTo": ".claude/agents/README.md",
+      "slots": ["AUDIT_TRIGGERS", "GATES"]
+    }
+  ],
+  "commands": [
+    {
+      "id": "start-milestone",
+      "title": "Start a milestone",
+      "body": "commands/start-milestone.md",
+      "slots": []
+    },
+    {
+      "id": "start-slice",
+      "title": "Start a slice",
+      "body": "commands/start-slice.md",
+      "slots": ["AUDIT_TRIGGERS"]
+    },
+    {
+      "id": "close-slice",
+      "title": "Close a slice",
+      "body": "commands/close-slice.md",
+      "slots": ["GATES", "BUDGET_STATE", "BASE_BRANCH"]
+    },
+    {
+      "id": "worktree",
+      "title": "Work in a worktree",
+      "body": "commands/worktree.md",
+      "slots": ["BASE_BRANCH"]
+    },
+    {
+      "id": "plant",
+      "title": "Plant a bug",
+      "body": "commands/plant.md",
+      "slots": []
+    },
+    {
+      "id": "new-module",
+      "title": "Scaffold a module",
+      "body": "commands/new-module.md",
+      "slots": []
+    },
+    {
+      "id": "review-security",
+      "title": "Run a security review",
+      "body": "commands/review-security.md",
+      "slots": ["AUDIT_TRIGGERS"]
+    },
+    {
+      "id": "create-roadmap",
+      "title": "Create the roadmap",
+      "body": "commands/create-roadmap.md",
+      "slots": ["BUDGET_STATE"]
+    },
+    {
+      "id": "update-roadmap",
+      "title": "Update the roadmap",
+      "body": "commands/update-roadmap.md",
+      "slots": ["BUDGET_STATE"]
+    }
+  ],
+  "workflows": [
+    {
+      "id": "mktrue",
+      "title": "The kit's check, on every push",
+      "body": "workflows/mktrue.yml",
+      "renderTo": ".github/workflows/mktrue.yml",
+      "slots": ["RELEASE_VERSION", "RELEASE_SHA256"]
+    }
+  ],
+  "rules": [
+    {
+      "section": 1,
+      "title": "Where to look first",
+      "body": "rules/01-where-to-look-first.md",
+      "owner": "kit",
+      "slots": [
+        "NAME",
+        "PURPOSE",
+        "KIT_VERSION",
+        "PATH_STATE",
+        "PATH_ROADMAP",
+        "PATH_DECISIONS_INDEX",
+        "PATH_DECISIONS",
+        "PATH_DESIGN",
+        "PATH_LOG"
+      ]
+    },
+    {
+      "section": 2,
+      "title": "Stack and versions",
+      "body": "rules/02-stack-and-versions.md",
+      "owner": "repo",
+      "slots": []
+    },
+    {
+      "section": 3,
+      "title": "Architecture and boundaries",
+      "body": "rules/03-architecture-and-boundaries.md",
+      "owner": "repo",
+      "slots": []
+    },
+    {
+      "section": 4,
+      "title": "How work runs",
+      "body": "rules/04-how-work-runs.md",
+      "owner": "repo",
+      "slots": ["GATES"]
+    },
+    {
+      "section": 5,
+      "title": "Testing and plants",
+      "body": "rules/05-testing-and-plants.md",
+      "owner": "repo",
+      "slots": []
+    },
+    {
+      "section": 6,
+      "title": "Security posture and data classes",
+      "body": "rules/06-security-and-data-classes.md",
+      "owner": "repo",
+      "slots": ["DATA_CLASSES", "AUTH", "AUDIT_TRIGGERS"]
+    },
+    {
+      "section": 7,
+      "title": "Conventions",
+      "body": "rules/07-conventions.md",
+      "owner": "repo",
+      "slots": ["LANGUAGES"]
+    },
+    {
+      "section": 8,
+      "title": "What agents may and may not do",
+      "body": "rules/08-agent-permissions.md",
+      "owner": "repo",
+      "slots": []
+    },
+    {
+      "section": 9,
+      "title": "Budgets and drift",
+      "body": "rules/09-budgets-and-drift.md",
+      "owner": "repo",
+      "slots": ["BUDGET_RULES", "BUDGET_STATE", "BUDGET_DECISION"]
+    },
+    {
+      "section": 10,
+      "title": "Where things live",
+      "body": "rules/10-where-things-live.md",
+      "owner": "repo",
+      "slots": []
+    }
+  ],
+  "docs": [
+    {
+      "id": "state",
+      "title": "State",
+      "body": "docs/state.md",
+      "renderTo": "docs/STATE.md",
+      "slots": ["NAME"]
+    },
+    {
+      "id": "design-plan",
+      "title": "Milestone plan",
+      "body": "docs/design-plan.md",
+      "renderTo": "docs/design/",
+      "slots": []
+    },
+    {
+      "id": "decision",
+      "title": "Decision",
+      "body": "docs/decision.md",
+      "renderTo": "docs/decisions/",
+      "slots": ["BUDGET_DECISION"]
+    },
+    {
+      "id": "log-entry",
+      "title": "Log entry",
+      "body": "docs/log-entry.md",
+      "renderTo": "docs/log/",
+      "slots": []
+    },
+    {
+      "id": "roadmap",
+      "title": "Roadmap",
+      "body": "docs/roadmap.md",
+      "renderTo": "docs/ROADMAP.md",
+      "slots": ["NAME"]
+    },
+    {
+      "id": "decisions-index",
+      "title": "Decisions index",
+      "body": "docs/decisions-index.md",
+      "renderTo": "docs/decisions/index.md",
+      "slots": []
+    },
+    {
+      "id": "design-readme",
+      "title": "Design",
+      "body": "docs/design-readme.md",
+      "renderTo": "docs/design/README.md",
+      "slots": []
+    }
+  ],
+  "targets": {
+    "claude-code": {
+      "roles": ".claude/agents/__MKTRUE_ROLE_ID__.md",
+      "commands": ".claude/commands/__MKTRUE_COMMAND_ID__.md",
+      "rules": "CLAUDE.md",
+      "settings": ".claude/settings.json",
+      "roleFrontmatter": ["name", "description", "tools", "model", "effort"],
+      "vocabulary": {
+        "models": ["opus", "sonnet", "haiku", "inherit"],
+        "efforts": ["low", "medium", "high", "xhigh", "max"],
+        "effortUnsupportedOn": ["haiku"]
+      }
+    }
+  }
+}

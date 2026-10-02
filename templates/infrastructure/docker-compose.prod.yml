@@ -1,0 +1,122 @@
+# Dokploy compose for __MKTRUE_NAME__-infrastructure — **this is the production file**.
+#
+# It owns the one thing both applications depend on and neither should own: an authenticated
+# MongoDB, and the network they reach it on. Deploy this stack FIRST; every consumer
+# declares its network as external and will not start without it.
+#
+# ── The security posture, stated once ────────────────────────────────────────────────────────────
+#
+#   * **Authenticated.** SCRAM-SHA-256, a keyFile for replica-set internal auth, and a separate
+#     least-privilege user per database. This is what makes one shared instance defensible: the
+#     most exposed consumer holds a credential that can read and write its own database and
+#     cannot see any other consumer's at all.
+#   * **Unroutable.** `internal: true` on the network, and no `ports:` anywhere. The database has
+#     no route to the internet and the internet has no route to it. Not "should not" — cannot.
+#   * **Least privilege, asserted rather than assumed.** `scripts/verify.sh` tries to read every
+#     consumer's database as every other consumer and fails the deploy if any succeeds.
+#   * **Ready to be exposed, but not exposed.** Everything a public endpoint would need is already
+#     true (auth, per-user roles, no shared credentials). What is deliberately absent is TLS — see
+#     docs/security.md for the one-file change and the trigger that should force it.
+#
+# ── The data ─────────────────────────────────────────────────────────────────────────────────────
+#
+# `MONGO_DATA_DIR` points at **__MKTRUE_NAME__'s existing mongo directory**. There is no dump, no restore
+# and no window in which the journal is in flight — this instance adopts the files in place. That
+# only works because `replSetName` is still `rs0` and the container answers to the network alias
+# `__MKTRUE_NAME__-mongo`, which is the hostname rs0's stored configuration names. Read docs/MIGRATION.md
+# before deploying this the first time; the ordering matters and one step is irreversible.
+name: __MKTRUE_NAME__-infrastructure
+
+services:
+  infra-mongo:
+    # Pinned to the exact patch, matching what __MKTRUE_NAME__ already ran. Never `mongo:8`, never `latest`:
+    # an unexpected major on a restart is a migration nobody scheduled.
+    image: mongo:8.2.12
+    # The config file is the authority (mongo/mongod.conf). Flags on a command line get dropped in
+    # a hurried edit; a config file shows up in a diff.
+    command: ["mongod", "--config", "/etc/mongo/mongod.conf"]
+    # No `ports:` — NEVER published to the host. With `internal: true` below, this is belt and
+    # braces, and both stay.
+    volumes:
+      # **__MKTRUE_NAME__'s existing data directory**, adopted in place. `:?` fails the deploy loudly rather
+      # than silently starting an empty instance that looks like total data loss.
+      - ${MONGO_DATA_DIR:?set MONGO_DATA_DIR to the existing mongo data path}:/data/db
+      # Read-only: mongod reads the keyfile at boot and has no business rewriting it.
+      - ${MONGO_KEYFILE:?set MONGO_KEYFILE to the absolute host path of the keyfile}:/etc/mongo-keyfile/keyfile:ro
+      - ./mongo/mongod.conf:/etc/mongo/mongod.conf:ro
+      - ./scripts:/scripts:ro
+    labels:
+      - "logging=promtail"
+    restart: unless-stopped
+    healthcheck:
+      # `hello` is one of the few commands MongoDB answers before authentication, which is why this
+      # probe carries no credentials. Checking `isWritablePrimary` rather than mere liveness is
+      # deliberate: a replica set member that is up but has no primary accepts connections and then
+      # blocks every write on server selection — the apps hang instead of erroring, which is the
+      # most confusing failure this stack can produce.
+      test: ["CMD", "mongosh", "--quiet", "--eval", "if (!db.hello().isWritablePrimary) quit(1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      __MKTRUE_NAME__-infra:
+        aliases:
+          # **Load-bearing, not cosmetic.** rs0's stored configuration — inside the data directory
+          # this instance adopts — names its member as `__MKTRUE_NAME__-mongo:27017`. Without this alias that
+          # hostname stops resolving, the node never becomes primary, and every write in both apps
+          # hangs. Removing it is a `rs.reconfig`, not an edit (docs/MIGRATION.md §6).
+          - __MKTRUE_NAME__-mongo
+
+  infra-backup:
+    # Same pinned tag as infra-mongo, on purpose: the mongo image already ships mongodump, so
+    # backups add no third-party image to trust, pin, pull or patch. Upgrade the two together — a
+    # mongodump older than the server it dumps is a bad surprise to find during a restore.
+    image: mongo:8.2.12
+    command: ["/usr/local/bin/backup-loop.sh"]
+    volumes:
+      - ./scripts/backup-loop.sh:/usr/local/bin/backup-loop.sh:ro
+      # The ONLY writable mount this container gets. `MONGO_DATA_DIR` is deliberately absent: the
+      # thing that copies the database must not be able to corrupt it.
+      - ${INFRA_BACKUP_DIR:?set INFRA_BACKUP_DIR to the absolute host path for archives}:/backups
+    environment:
+      # Reads everything, writes nothing — the `backup` role carries no write privilege on any
+      # application database.
+      BACKUP_DB_USER: ${BACKUP_DB_USER:-backup_agent}
+      BACKUP_DB_PASSWORD: ${BACKUP_DB_PASSWORD}
+      MONGO_HOST: infra-mongo:27017
+      __MKTRUE_NAME_UPPER___DB_NAME: ${__MKTRUE_NAME_UPPER___DB_NAME:-__MKTRUE_NAME__}
+      INFRA_CONSUMERS: ${INFRA_CONSUMERS}
+      RETENTION_DAYS: ${RETENTION_DAYS:-14}
+    depends_on:
+      infra-mongo:
+        condition: service_healthy
+    labels:
+      - "logging=promtail"
+    restart: unless-stopped
+    # PID 1 ignores signals it has no handler for, so without an init `docker stop` waits the full
+    # grace period and SIGKILLs this shell loop on every deploy. tini forwards the TERM.
+    init: true
+    healthcheck:
+      # The loop touches /backups/.heartbeat only after BOTH databases are archived, so "fresher
+      # than 2h" reads as "the loop is alive and today's archives are in place" — an honest signal,
+      # unlike "the process exists", which stays true while every dump fails.
+      test: ["CMD-SHELL", "find /backups/.heartbeat -mmin -120 | grep -q ."]
+      interval: 10m
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+    networks:
+      - __MKTRUE_NAME__-infra
+
+networks:
+  __MKTRUE_NAME__-infra:
+    # Named explicitly so the other two repos can join it by a name that does not depend on this
+    # project's directory. Both declare it `external: true` with this exact name.
+    name: ${INFRA_NETWORK:-__MKTRUE_NAME__-infra}
+    driver: bridge
+    # **No route to the internet, in either direction.** A database has no business making outbound
+    # connections, and this removes the exfiltration half of any compromise rather than trusting a
+    # firewall rule elsewhere. The applications are unaffected: each sits on this network *and* its
+    # own bridge, and egress goes out the other one.
+    internal: true

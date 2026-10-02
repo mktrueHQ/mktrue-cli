@@ -1,0 +1,9 @@
+packages:
+  - "packages/*"
+
+# Native postinstall build scripts pnpm is allowed to run. This is a supply-chain
+# gate, not a formality: a package listed here runs its own code at install time.
+# esbuild powers Vitest and is the only one the kit needs today. Anything new that
+# wants a build script is a deliberate edit here, never a default yes.
+allowBuilds:
+  esbuild: true

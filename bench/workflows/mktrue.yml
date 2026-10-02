@@ -1,0 +1,32 @@
+# Written by mktrue and updated by `mktrue sync`. Your own gates live in ci.yml.
+name: mktrue
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+
+      - name: fetch mktrue __MKTRUE_RELEASE_VERSION__
+        env:
+          GH_TOKEN: ${{ secrets.MKTRUE_TOKEN }}
+        run: gh release download "v__MKTRUE_RELEASE_VERSION__" --repo mktrueHQ/mktrue --pattern mktrue.js --dir "$RUNNER_TEMP/mktrue"
+
+      - name: verify the pinned checksum
+        run: echo "__MKTRUE_RELEASE_SHA256__  $RUNNER_TEMP/mktrue/mktrue.js" | sha256sum --check --strict
+
+      - name: mktrue check
+        run: node "$RUNNER_TEMP/mktrue/mktrue.js" check

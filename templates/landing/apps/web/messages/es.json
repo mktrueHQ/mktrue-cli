@@ -1,0 +1,75 @@
+{
+  "Meta": {
+    "siteName": "__MKTRUE_TITLE__",
+    "home": {
+      "title": "__MKTRUE_TITLE__",
+      "description": "Sustituye esto por una frase que diga qué hace __MKTRUE_TITLE__ y para quién es."
+    },
+    "request": {
+      "title": "Solicitar acceso · __MKTRUE_TITLE__",
+      "description": "Pide una invitación a __MKTRUE_TITLE__."
+    }
+  },
+  "Header": {
+    "goToApp": "Ir a la app",
+    "requestAccess": "Solicitar acceso",
+    "skipToContent": "Saltar al contenido"
+  },
+  "Home": {
+    "title": "__MKTRUE_TITLE__",
+    "tagline": "Una frase sobre qué hace esto. Cámbiala antes de que alguien la lea.",
+    "requestAccess": "Solicitar acceso"
+  },
+  "Footer": {
+    "tagline": "Una frase sobre qué hace esto. Cámbiala antes de que alguien la lea.",
+    "colProduct": "__MKTRUE_TITLE__",
+    "goToApp": "Ir a la app",
+    "requestAccess": "Solicitar acceso",
+    "about": "Acerca de",
+    "colLegal": "Legal",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "language": "Idioma",
+    "langEn": "English",
+    "langEs": "Español",
+    "provenance": "Un proyecto pequeño e independiente. Sustituye esta línea antes de que alguien la lea."
+  },
+  "Prose": {
+    "lastUpdated": "Última actualización"
+  },
+  "RequestAccess": {
+    "title": "Solicitar acceso.",
+    "intro": "No hay botón de registro, a propósito. {owner} añade personas a mano, de pocas en pocas. Esto es una solicitud, no un registro, y nada de aquí crea una cuenta.",
+    "alreadyIn": "¿Ya tienes invitación?",
+    "goToApp": "Ir a la app",
+    "noscript": "El formulario necesita JavaScript. Solo envía tu dirección a {owner}."
+  },
+  "Form": {
+    "progress": "Progreso",
+    "steps": {
+      "fill": "Rellena tus datos",
+      "verify": "Verifica tu código",
+      "sent": "Hecho"
+    },
+    "emailLabel": "Correo",
+    "emailHint": "Enviamos un código aquí para comprobar que la dirección es tuya.",
+    "noteLabel": "¿Por qué quieres entrar?",
+    "noteHint": "Opcional, y ayuda.",
+    "codeLabel": "Código",
+    "codeHint": "Seis dígitos, enviados a {email}. Caduca en quince minutos.",
+    "submitFill": "Solicitar acceso",
+    "submitVerify": "Verificar",
+    "working": "Trabajando…",
+    "changeAddress": "Usar otra dirección",
+    "sentTitle": "Tu dirección está confirmada.",
+    "sentBody": "Las solicitudes se leen a mano. Si es que sí, recibirás un correo.",
+    "sentMeta": "Eso es todo, no hay más pasos.",
+    "errorGeneric": "Algo ha fallado. Inténtalo de nuevo.",
+    "errNetwork": "Algo ha fallado al enviarlo. Comprueba tu conexión e inténtalo de nuevo.",
+    "errRate": "Demasiados intentos. Inténtalo de nuevo dentro de una hora.",
+    "errMail": "El correo no está disponible ahora mismo. Inténtalo de nuevo en un momento.",
+    "errServer": "Algo ha fallado de nuestro lado. Inténtalo de nuevo.",
+    "errAddress": "Esa dirección no parece correcta.",
+    "errCode": "Ese código no ha funcionado. {back}"
+  }
+}

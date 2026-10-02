@@ -1,0 +1,75 @@
+{
+  "Meta": {
+    "siteName": "__MKTRUE_TITLE__",
+    "home": {
+      "title": "__MKTRUE_TITLE__",
+      "description": "Replace this with one sentence saying what __MKTRUE_TITLE__ does and who it is for."
+    },
+    "request": {
+      "title": "Request access · __MKTRUE_TITLE__",
+      "description": "Ask for an invitation to __MKTRUE_TITLE__."
+    }
+  },
+  "Header": {
+    "goToApp": "Go to the app",
+    "requestAccess": "Request access",
+    "skipToContent": "Skip to content"
+  },
+  "Home": {
+    "title": "__MKTRUE_TITLE__",
+    "tagline": "One sentence about what this does. Replace it before anyone reads it.",
+    "requestAccess": "Request access"
+  },
+  "Footer": {
+    "tagline": "One sentence about what this does. Replace it before anyone reads it.",
+    "colProduct": "__MKTRUE_TITLE__",
+    "goToApp": "Go to the app",
+    "requestAccess": "Request access",
+    "about": "About",
+    "colLegal": "Legal",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "language": "Language",
+    "langEn": "English",
+    "langEs": "Español",
+    "provenance": "A small, independent project. Replace this line before anyone reads it."
+  },
+  "Prose": {
+    "lastUpdated": "Last updated"
+  },
+  "RequestAccess": {
+    "title": "Request access.",
+    "intro": "There is no sign-up button, on purpose. {owner} adds people by hand, a few at a time. This is a request rather than a registration, and nothing here creates an account.",
+    "alreadyIn": "Already invited?",
+    "goToApp": "Go to the app",
+    "noscript": "The form needs JavaScript. All it does is send {owner} your address."
+  },
+  "Form": {
+    "progress": "Progress",
+    "steps": {
+      "fill": "Fill in your details",
+      "verify": "Verify your code",
+      "sent": "Done"
+    },
+    "emailLabel": "Email",
+    "emailHint": "We send a code here to check the address is really yours.",
+    "noteLabel": "Why do you want in?",
+    "noteHint": "Optional, and it helps.",
+    "codeLabel": "Code",
+    "codeHint": "Six digits, sent to {email}. It expires in fifteen minutes.",
+    "submitFill": "Request access",
+    "submitVerify": "Verify",
+    "working": "Working…",
+    "changeAddress": "Use a different address",
+    "sentTitle": "Your address is confirmed.",
+    "sentBody": "Requests are read by hand. If it is a yes, you will get an email.",
+    "sentMeta": "That's it, no further steps.",
+    "errorGeneric": "Something went wrong. Try again.",
+    "errNetwork": "Something went wrong sending that. Check your connection and try again.",
+    "errRate": "Too many attempts. Try again in an hour.",
+    "errMail": "Mail is temporarily unavailable. Try again shortly.",
+    "errServer": "Something went wrong on our end. Try again.",
+    "errAddress": "That address does not look right.",
+    "errCode": "That code did not work. {back}"
+  }
+}

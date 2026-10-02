@@ -1,0 +1,33 @@
+{
+  "name": "@__MKTRUE_NAME__/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node dev-session/serve.ts",
+    "dev:lan": "node dev-session/serve.ts --lan",
+    "build": "next build",
+    "start": "next start -p __MKTRUE_WEB_PORT__",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7",
+    "@__MKTRUE_NAME__/contracts": "workspace:*",
+    "next": "^16",
+    "next-intl": "^4.14.2",
+    "react": "^19",
+    "react-dom": "^19",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "postcss": "^8.5.24",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

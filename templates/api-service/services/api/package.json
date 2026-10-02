@@ -1,0 +1,28 @@
+{
+  "name": "@__MKTRUE_NAME__/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/app/main.ts",
+    "build": "tsup",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@clerk/backend": "^3",
+    "@__MKTRUE_NAME__/contracts": "workspace:*",
+    "fastify": "^5",
+    "mongoose": "^9",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "mongodb-memory-server": "^11",
+    "tsup": "^8",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

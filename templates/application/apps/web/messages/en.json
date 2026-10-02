@@ -1,0 +1,84 @@
+{
+  "shell": {
+    "signOut": "Sign out",
+    "backHome": "Back to the start",
+    "locale": {
+      "legend": "Language",
+      "refused": {
+        "session": "Your session isn’t valid here any more. Sign in again to change the language.",
+        "account": "This account can’t change the language here.",
+        "unavailable": "The language couldn’t be saved right now. Try again in a moment.",
+        "rejected": "That language couldn’t be saved. That’s a bug on our side, not something you did.",
+        "unreachable": "It isn’t clear whether the language changed. Try again in a moment."
+      }
+    },
+    "failure": {
+      "forbidden": {
+        "title": "No access",
+        "detail": "This account doesn’t have access here. Sign in with a different account, or ask for this one to be added."
+      },
+      "unauthenticated": {
+        "title": "Session refused",
+        "detail": "Your session isn’t valid here any more. Sign in again."
+      },
+      "notFound": {
+        "title": "It isn’t there any more",
+        "detail": "That couldn’t be found. Reload to see what’s actually there."
+      },
+      "invalid": {
+        "title": "That couldn’t be sent",
+        "detail": "The API rejected the request. That’s a bug on our side, not something you did."
+      },
+      "conflict": {
+        "title": "Something’s in the way",
+        "detail": "That can’t be done while things are as they are. Reload to see what changed."
+      },
+      "unavailable": {
+        "auth": {
+          "title": "Can’t check your session",
+          "detail": "Your sign-in can’t be verified right now. Try again in a moment."
+        },
+        "storage": {
+          "title": "Can’t reach your data",
+          "detail": "The service is up, but it can’t reach its database right now. Try again in a moment."
+        },
+        "api": {
+          "title": "Can’t load your data",
+          "detail": "The API isn’t answering properly right now. Reload in a moment."
+        }
+      }
+    },
+    "boundary": {
+      "heading": "Something went wrong on our side",
+      "body": "This screen couldn’t be drawn. That’s a bug on our side, not something you did.",
+      "retry": "Try again",
+      "reference": "Reference {digest}"
+    },
+    "notFound": {
+      "heading": "Not here",
+      "body": "That link doesn’t point at anything: something that was deleted, or an address that never existed."
+    }
+  },
+  "edge": {
+    "signIn": {
+      "note": "Sign-ups are closed. Only accounts on this deployment’s own list are admitted."
+    },
+    "noAccess": {
+      "title": "No access"
+    },
+    "notConfigured": {
+      "heading": "Sign-in is not configured",
+      "body": "Set the Clerk keys (<code>{publishable}</code> and <code>{secret}</code> in the root <code>{env}</code>) and restart."
+    }
+  },
+  "exampleItems": {
+    "heading": "Example items",
+    "filter": "Filter by status",
+    "all": "All",
+    "empty": "Nothing here yet.",
+    "status": {
+      "open": "Open",
+      "done": "Done"
+    }
+  }
+}
