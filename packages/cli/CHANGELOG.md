@@ -1,5 +1,11 @@
 # mktrue
 
+## 0.3.1
+
+### Patch Changes
+
+- 7b40506: Your repository's `.github/workflows/mktrue.yml` now installs the exact mktrue version that rendered it from npm, checks its registry signature with `npm audit signatures`, and runs `mktrue check`. It no longer downloads a release with a `MKTRUE_TOKEN` secret. Run `mktrue sync --write`, merge the change, and then delete the `MKTRUE_TOKEN` secret from your repository.
+
 ## 0.3.0
 
 ### Minor Changes

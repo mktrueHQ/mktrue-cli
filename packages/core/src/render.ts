@@ -1,8 +1,15 @@
-import type { BenchManifest, Role, Target } from "@mktrue/contracts";
+import {
+  WORKFLOW_SLOT_SOURCE,
+  type BenchManifest,
+  type Role,
+  type Target,
+} from "@mktrue/contracts";
 
 import { EXIT, type Finding } from "./findings.js";
 import { writeRegion } from "./regions.js";
 import { substitute } from "./slots.js";
+
+const EXACT_VERSION = /^[0-9]+\.[0-9]+\.[0-9]+$/;
 
 export interface RenderedFile {
   readonly path: string;
@@ -101,14 +108,16 @@ export function renderBench(
     if (!slot.required && !effective.has(key)) effective.set(key, "");
   }
 
+  const refused = new Set<string>();
   const fill = (text: string, where: string, scope: ReadonlyMap<string, string> = effective) => {
     const result = substitute(text, scope);
     for (const slot of result.missing) {
+      if (refused.has(slot)) continue;
       if (effective.has(slot)) {
         findings.push({
           gate: "render",
-          what: `${where} uses __MKTRUE_${slot}__, which it does not declare from the release pin`,
-          why: "a workflow runs with the repository's secrets, so it takes only release values",
+          what: `${where} uses __MKTRUE_${slot}__, which a workflow may not take`,
+          why: "a workflow runs on the repository's CI, so it takes only the kit's own version",
           fix: `remove __MKTRUE_${slot}__ from bench/${where}`,
           exit: EXIT.FINDINGS,
         });
@@ -118,9 +127,7 @@ export function renderBench(
         gate: "render",
         what: `${where} uses __MKTRUE_${slot}__ and no value was supplied`,
         why: "the slot is left in place rather than blanked, so the rendered file would ship with it visible",
-        fix: manifest.slots[slot]?.from.startsWith("release.")
-          ? `add bench/release.json, the release pin ${slot} is read from`
-          : `supply ${slot} in the answers, or remove it from bench/${where}`,
+        fix: `supply ${slot} in the answers, or remove it from bench/${where}`,
         exit: EXIT.FINDINGS,
       });
     }
@@ -150,13 +157,24 @@ export function renderBench(
   for (const workflow of manifest.workflows) {
     const body = bodies.get(workflow.body);
     if (body === undefined) continue;
-    const released = new Map(
-      [...effective].filter(
-        ([key]) =>
-          workflow.slots.includes(key) && manifest.slots[key]?.from.startsWith("release.") === true,
-      ),
-    );
-    files.push({ path: workflow.renderTo, content: fill(body, workflow.body, released) });
+    const versioned = new Map<string, string>();
+    for (const [key, value] of effective) {
+      if (!workflow.slots.includes(key)) continue;
+      if (manifest.slots[key]?.from !== WORKFLOW_SLOT_SOURCE) continue;
+      if (!EXACT_VERSION.test(value)) {
+        findings.push({
+          gate: "render",
+          what: `${workflow.body} would install mktrue at "${value}", not an exact version`,
+          why: "a product's CI installs exactly the kit version that rendered it, never a tag or range",
+          fix: "render with a kit whose KIT_VERSION is x.y.z",
+          exit: EXIT.FINDINGS,
+        });
+        refused.add(key);
+        continue;
+      }
+      versioned.set(key, value);
+    }
+    files.push({ path: workflow.renderTo, content: fill(body, workflow.body, versioned) });
   }
 
   const sections = [...manifest.rules].sort((a, b) => a.section - b.section);

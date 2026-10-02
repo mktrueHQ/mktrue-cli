@@ -53,7 +53,7 @@ export async function runSync(
 
   const config = repo.config;
   const rendered = renderBenchFor(
-    { manifest: repo.manifest, bodies: repo.bodies, release: repo.release },
+    { manifest: repo.manifest, bodies: repo.bodies },
     config,
     options.kitVersion,
     options.target,

@@ -341,7 +341,7 @@ export async function runNew(
     name: options.name,
     answers,
     templates: sources.templates,
-    bench: { manifest: bench.manifest, bodies: bench.bodies, release: bench.release },
+    bench: { manifest: bench.manifest, bodies: bench.bodies },
     date: ports.today(),
     kitVersion: options.kitVersion,
     target: options.target,
@@ -475,7 +475,6 @@ export async function runNew(
       clip(`mktrue: next · cd ${options.name}, then /create-roadmap in your agent`, COLUMNS),
     );
   }
-  out.line("mktrue: ci · mktrue.yml stays red until the repo has a MKTRUE_TOKEN secret");
   return EXIT.TRUE;
 }
 

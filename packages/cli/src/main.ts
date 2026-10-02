@@ -24,7 +24,7 @@ import { loadRepo } from "./repo.js";
 import { COLUMNS, clip, errorCode, internalError, refuse } from "./report.js";
 import { refuseUnsafeShell, UnsafeShellArgument } from "./spawn.js";
 
-export const KIT_VERSION = "0.3.0";
+export const KIT_VERSION = "0.3.1";
 
 const USAGE = `mktrue <command>
 

@@ -1,6 +1,6 @@
 {
   "name": "mktrue",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Turns a product idea into a repository an AI coding agent can build without drifting, and keeps it in step.",
   "license": "MIT",
   "repository": {

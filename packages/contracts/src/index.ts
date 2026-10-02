@@ -21,7 +21,6 @@ export {
   contractDocumentSchema,
   documentSchema,
   relativePathSchema,
-  releasePinSchema,
   roleSchema,
   rulesOwnerSchema,
   rulesSectionSchema,
@@ -31,8 +30,9 @@ export {
   targetSchema,
   targetVocabularySchema,
   workflowSchema,
+  WORKFLOW_SLOT_SOURCE,
 } from "./bench.js";
-export type { BenchManifest, ReleasePin, Role, RulesSection, Target, Workflow } from "./bench.js";
+export type { BenchManifest, Role, RulesSection, Target, Workflow } from "./bench.js";
 
 export {
   answersSchema,

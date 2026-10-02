@@ -20,13 +20,15 @@ jobs:
         with:
           node-version: "24"
 
-      - name: fetch mktrue __MKTRUE_RELEASE_VERSION__
-        env:
-          GH_TOKEN: ${{ secrets.MKTRUE_TOKEN }}
-        run: gh release download "v__MKTRUE_RELEASE_VERSION__" --repo mktrueHQ/mktrue --pattern mktrue.js --dir "$RUNNER_TEMP/mktrue"
+      - name: install mktrue __MKTRUE_KIT_VERSION__
+        run: |
+          mkdir "$RUNNER_TEMP/mktrue"
+          cd "$RUNNER_TEMP/mktrue"
+          echo '{"private": true}' > package.json
+          npm install --ignore-scripts --no-audit --no-fund --save-exact "mktrue@__MKTRUE_KIT_VERSION__"
 
-      - name: verify the pinned checksum
-        run: echo "__MKTRUE_RELEASE_SHA256__  $RUNNER_TEMP/mktrue/mktrue.js" | sha256sum --check --strict
+      - name: verify registry signatures
+        run: cd "$RUNNER_TEMP/mktrue" && npm audit signatures
 
       - name: mktrue check
-        run: node "$RUNNER_TEMP/mktrue/mktrue.js" check
+        run: '"$RUNNER_TEMP/mktrue/node_modules/.bin/mktrue" check'

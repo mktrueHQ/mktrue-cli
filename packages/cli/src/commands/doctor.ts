@@ -234,7 +234,6 @@ export async function runDoctor(
   collect(await checkSkill(ports, out, options.write));
 
   await checkOptional(ports, out, "docker", "the infrastructure template (6d)");
-  await checkOptional(ports, out, "gh", "setting MKTRUE_TOKEN on a product");
   await checkOptional(ports, out, "claude", "the skill");
 
   collect(await checkModel(ports, out));

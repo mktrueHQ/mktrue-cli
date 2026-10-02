@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "slotSyntax": "__MKTRUE_<KEY>__",
   "slots": {
     "NAME": {
@@ -117,16 +117,6 @@
       "from": "config.paths.log",
       "required": true,
       "kind": "path"
-    },
-    "RELEASE_VERSION": {
-      "from": "release.version",
-      "required": true,
-      "kind": "text"
-    },
-    "RELEASE_SHA256": {
-      "from": "release.sha256",
-      "required": true,
-      "kind": "text"
     }
   },
   "roles": [
@@ -268,7 +258,7 @@
       "title": "The kit's check, on every push",
       "body": "workflows/mktrue.yml",
       "renderTo": ".github/workflows/mktrue.yml",
-      "slots": ["RELEASE_VERSION", "RELEASE_SHA256"]
+      "slots": ["KIT_VERSION"]
     }
   ],
   "rules": [

@@ -1,11 +1,9 @@
 import {
   benchManifestSchema,
   mktrueConfigSchema,
-  releasePinSchema,
   templateManifestSchema,
   type BenchManifest,
   type MktrueConfig,
-  type ReleasePin,
   type TemplateManifest,
 } from "@mktrue/contracts";
 import { EXIT, type Document, type Finding, type TemplateSource } from "@mktrue/core";
@@ -20,7 +18,6 @@ export interface Repo {
   readonly rawConfig: Readonly<Record<string, unknown>> | undefined;
   readonly manifest: BenchManifest | undefined;
   readonly bodies: ReadonlyMap<string, string>;
-  readonly release: ReleasePin | undefined;
   readonly templates: readonly TemplateManifest[];
   readonly templateSources: readonly TemplateSource[];
   readonly documents: readonly Document[];
@@ -65,7 +62,6 @@ async function benchSourceOf(
 export interface Bench {
   readonly manifest: BenchManifest | undefined;
   readonly bodies: ReadonlyMap<string, string>;
-  readonly release: ReleasePin | undefined;
   readonly findings: readonly Finding[];
 }
 
@@ -109,28 +105,7 @@ export async function loadBenchFrom(benchSource: ReadOnlyFileSystem | undefined)
     }
   }
 
-  let release: ReleasePin | undefined;
-  const releaseText =
-    manifest === undefined
-      ? undefined
-      : benchSource
-        ? await benchSource.read("bench/release.json")
-        : EMBEDDED_BENCH["release.json"];
-  if (releaseText !== undefined) {
-    try {
-      const parsed = releasePinSchema.safeParse(JSON.parse(releaseText));
-      if (parsed.success) release = parsed.data;
-      else {
-        findings.push(
-          parseFailure("bench/release.json", parsed.error.issues[0]?.message ?? "invalid"),
-        );
-      }
-    } catch (error) {
-      findings.push(parseFailure("bench/release.json", errorCode(error)));
-    }
-  }
-
-  return { manifest, bodies, release, findings };
+  return { manifest, bodies, findings };
 }
 
 export async function loadTemplateSources(
@@ -199,7 +174,7 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
 
   const bench = await loadBench(fs, benchFs);
   findings.push(...bench.findings);
-  const { manifest, bodies, release } = bench;
+  const { manifest, bodies } = bench;
 
   const templates: TemplateManifest[] = [];
   const templateSources: TemplateSource[] = [];
@@ -275,7 +250,6 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
     rawConfig,
     manifest,
     bodies,
-    release,
     templates,
     templateSources,
     documents,

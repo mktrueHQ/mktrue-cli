@@ -1,4 +1,4 @@
-import type { BenchManifest, MktrueConfig, ReleasePin } from "@mktrue/contracts";
+import type { BenchManifest, MktrueConfig } from "@mktrue/contracts";
 
 import { EXIT, type Finding } from "./findings.js";
 import { renderBench, type RenderedFile, type RenderedRules } from "./render.js";
@@ -144,7 +144,6 @@ export function ownedAfterSync(
 export interface BenchSource {
   readonly manifest: BenchManifest;
   readonly bodies: ReadonlyMap<string, string>;
-  readonly release: ReleasePin | undefined;
 }
 
 export interface BenchRender {
@@ -169,7 +168,6 @@ export function renderBenchFor(
       paths: config.paths,
     },
     derived: { gates: config.gates ?? [], kitVersion },
-    release: bench.release,
   });
   return { ...renderBench(bench.manifest, bench.bodies, values, target), values };
 }

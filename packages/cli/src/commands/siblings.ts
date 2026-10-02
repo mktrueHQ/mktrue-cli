@@ -173,10 +173,7 @@ export async function runCheckSiblings(
     );
   }
   const config = repo.config;
-  const describe = describer(
-    { manifest: repo.manifest, bodies: repo.bodies, release: repo.release },
-    options,
-  );
+  const describe = describer({ manifest: repo.manifest, bodies: repo.bodies }, options);
 
   const gates = runGates(repo, options.kitVersion);
   const self = await describe(config, (path) => fs.read(path));

@@ -91,12 +91,7 @@ export const workflowSchema = z.object({
   slots: z.array(slotKeySchema),
 });
 
-export const releasePinSchema = z
-  .object({
-    version: z.string().regex(/^[0-9]+\.[0-9]+\.[0-9]+$/, "a release version is x.y.z"),
-    sha256: z.string().regex(/^[0-9a-f]{64}$/, "a release sha256 is 64 lowercase hex characters"),
-  })
-  .strict();
+export const WORKFLOW_SLOT_SOURCE = "derived.kitVersion";
 
 export const targetVocabularySchema = z.object({
   models: z.array(z.string().min(1)).min(1),
@@ -153,10 +148,11 @@ export const benchManifestSchema = baseBenchManifestSchema.superRefine((manifest
 
   for (const workflow of manifest.workflows) {
     for (const slot of workflow.slots) {
-      if (manifest.slots[slot]?.from.startsWith("release.") !== false) continue;
+      const from = manifest.slots[slot]?.from;
+      if (from === undefined || from === WORKFLOW_SLOT_SOURCE) continue;
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `workflow ${workflow.id} takes ${slot} from outside the kit's release pin`,
+        message: `workflow ${workflow.id} takes ${slot} from ${from}, not the kit's own version`,
         path: ["workflows", workflow.id, "slots"],
       });
     }
@@ -214,4 +210,3 @@ export type Role = z.infer<typeof roleSchema>;
 export type RulesSection = z.infer<typeof rulesSectionSchema>;
 export type Target = z.infer<typeof targetSchema>;
 export type Workflow = z.infer<typeof workflowSchema>;
-export type ReleasePin = z.infer<typeof releasePinSchema>;
