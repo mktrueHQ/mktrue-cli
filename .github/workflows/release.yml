@@ -185,7 +185,7 @@ jobs:
           set -- npm/mktrue-*.tgz
           test "$#" -eq 1
           npm install --global --ignore-scripts npm@11.20.0
-          npm stage publish "$(ls npm/mktrue-*.tgz)" --tag next --provenance
+          npm stage publish "$(ls ./npm/mktrue-*.tgz)" --tag next --provenance
 
   release:
     needs: [attest, publish]
