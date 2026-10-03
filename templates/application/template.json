@@ -23,6 +23,10 @@
   },
   "files": [
     {
+      "path": ".env.example",
+      "replaces": true
+    },
+    {
       "path": "apps/web/.gitignore"
     },
     {
@@ -159,10 +163,16 @@
       "path": "apps/web/test/dev-session/stand-ins.test.ts"
     },
     {
+      "path": "apps/web/test/env-example.test.ts"
+    },
+    {
       "path": "apps/web/test/i18n/accept-language.test.ts"
     },
     {
       "path": "apps/web/test/lib/api-failure.test.ts"
+    },
+    {
+      "path": "apps/web/test/lib/api-off.test.ts"
     },
     {
       "path": "apps/web/test/lib/api.test.ts"
@@ -181,6 +191,9 @@
     },
     {
       "path": "apps/web/test/messages.test.ts"
+    },
+    {
+      "path": "apps/web/test/next-config.test.ts"
     },
     {
       "path": "apps/web/test/proxy.test.ts"
@@ -203,7 +216,11 @@
       "replaces": true
     }
   ],
-  "gates": ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test"],
+  "rules": {
+    "2": "rules/02-stack-and-versions.md",
+    "10": "rules/10-where-things-live.md"
+  },
+  "gates": ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test", "pnpm format:check"],
   "transforms": [
     {
       "find": " (D-\\d{3})",

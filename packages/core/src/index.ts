@@ -42,6 +42,14 @@ export type { RenderedFile, RenderedRegion, RenderedRules } from "./render.js";
 export { extractRegion, regionIds, unterminatedRegion, writeRegion } from "./regions.js";
 
 export { planRules } from "./rules.js";
+export {
+  GATES_FIX,
+  checkGates,
+  checkSettings,
+  denyRules,
+  settingsLinkedOutside,
+} from "./settings.js";
+export type { SettingsCheck } from "./settings.js";
 export type { RulesAction, RulesInput, RulesPlan } from "./rules.js";
 
 export { configAfterBench, ownedAfterSync, planBench, planSync, renderBenchFor } from "./sync.js";
@@ -103,6 +111,8 @@ export type { NewFile, NewInput, NewPlan, PnpmRequirement } from "./new.js";
 export {
   answersFromReplies,
   checkReply,
+  hasSignIn,
+  NO_SIGN_IN,
   parseList,
   questionsFor,
   replyValue,

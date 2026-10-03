@@ -51,11 +51,10 @@ const PRINCIPAL_ID = /^user_[A-Za-z0-9_-]+$/;
 
 const WHITELIST_SEPARATORS = /[\s,]+/;
 
+const DEFAULT_PORT = __MKTRUE_API_PORT__;
+
 const envSchema = z.object({
-  PORT: z.preprocess(
-    blankToUndefined,
-    z.coerce.number().int().positive().default(__MKTRUE_API_PORT__),
-  ),
+  PORT: z.preprocess(blankToUndefined, z.coerce.number().int().positive().default(DEFAULT_PORT)),
   HOST: z.preprocess(blankToUndefined, z.string().min(1).default("0.0.0.0")),
   API_VERSION: z.preprocess(blankToUndefined, z.string().min(1).default("0.1.0")),
   NODE_ENV: z.preprocess(blankToUndefined, z.string().min(1).default("development")),

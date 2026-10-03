@@ -30,3 +30,9 @@ jobs:
 
       - name: test
         run: pnpm test
+
+      - name: lint
+        run: pnpm lint
+
+      - name: format
+        run: pnpm format:check

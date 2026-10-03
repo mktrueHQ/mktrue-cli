@@ -1,6 +1,7 @@
 import { declaresAnswer, type BenchManifest, type TemplateManifest } from "@mktrue/contracts";
 
 import { EXIT, type Finding } from "./findings.js";
+import { denyRules } from "./settings.js";
 import { freeTextSlotKeys, slotsIn } from "./slots.js";
 
 export interface BenchEntry {
@@ -80,7 +81,17 @@ export function checkBenchIntegrity(
     }
   }
 
-  for (const target of Object.values(manifest.targets)) {
+  for (const [name, target] of Object.entries(manifest.targets)) {
+    const settings = bodies.get(target.settingsBody);
+    if (settings === undefined || (denyRules(settings) ?? []).length === 0) {
+      findings.push({
+        gate: "bench",
+        what: `${target.settingsBody} holds no deny rules for the target ${name}`,
+        why: "new would render a settings file that stops nothing, and check would have nothing to look for",
+        fix: `write permissions.deny in bench/${target.settingsBody}`,
+        exit: EXIT.FINDINGS,
+      });
+    }
     for (const value of [target.roles, target.commands, target.rules, target.settings]) {
       for (const slot of slotsIn(value)) used.add(slot);
     }

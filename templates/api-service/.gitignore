@@ -16,6 +16,9 @@ coverage/
 !.env.example
 *.local
 
+# mktrue slice folders
+.mktrue/
+
 # os & editor
 .DS_Store
 Thumbs.db

@@ -130,7 +130,8 @@ function sliceAndRole(prompt: string): { slice?: string; role?: string } {
 }
 
 function claimPattern(common: string): RegExp {
-  const slices = `${escapeRegExp(common)}/slices/(${SLICE_ID})/`;
+  const roots = [common, ...(common.endsWith("/.git") ? [`${common.slice(0, -5)}/.mktrue`] : [])];
+  const slices = `(?:${roots.map(escapeRegExp).join("|")})/slices/(${SLICE_ID})/`;
   return new RegExp(`${PATH_START}${slices}(?:([A-Za-z0-9_-]+)\\.md)?`, "g");
 }
 

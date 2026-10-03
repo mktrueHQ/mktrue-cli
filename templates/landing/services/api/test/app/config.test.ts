@@ -5,7 +5,9 @@ import { loadConfig } from "../../src/app/config";
 const FILLED = {
   NODE_ENV: "production",
   RESEND_API_KEY: "re_test",
+  // prettier-ignore
   MAIL_FROM: "__MKTRUE_TITLE__ <no-reply@example.com>",
+  // prettier-ignore
   ACCESS_REQUEST_DESTINATION_EMAIL: "__MKTRUE_OWNER__@example.com",
   ACCESS_REQUEST_TOKEN_SECRET: "a-secret",
 } satisfies NodeJS.ProcessEnv;

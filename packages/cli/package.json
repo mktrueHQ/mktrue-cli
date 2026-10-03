@@ -1,7 +1,15 @@
 {
   "name": "mktrue",
-  "version": "0.3.1",
+  "version": "1.0.0",
   "description": "Turns a product idea into a repository an AI coding agent can build without drifting, and keeps it in step.",
+  "keywords": [
+    "cli",
+    "scaffold",
+    "template",
+    "ai-agent",
+    "claude-code"
+  ],
+  "homepage": "https://mktrue.dev",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -18,6 +26,7 @@
   "files": [
     "dist/mktrue.js",
     "skill",
+    "README.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES"
   ],

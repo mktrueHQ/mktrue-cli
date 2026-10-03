@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { type AppLocale, routing } from "@/i18n/routing";
+import { hasApi } from "@/lib/config";
 import { buildCanonical, buildLanguageAlternates } from "@/lib/seo";
 
 /**
@@ -15,7 +16,7 @@ import { buildCanonical, buildLanguageAlternates } from "@/lib/seo";
  * URLs that all 308 away. It is built from `buildCanonical`, which is the same function the pages
  * use for their own canonical tag, so the two cannot disagree.
  */
-const PATHS = ["", "/about", "/request-access", "/privacy", "/terms"] as const;
+const PATHS = ["", "/about", ...(hasApi ? ["/request-access"] : []), "/privacy", "/terms"];
 
 function entriesFor(locale: AppLocale): MetadataRoute.Sitemap {
   return PATHS.map((path) => ({

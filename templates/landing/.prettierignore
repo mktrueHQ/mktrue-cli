@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+
+# Rendered by mktrue and kept in step by `mktrue sync`, or prose: the kit compares the first by
+# hash, and the README opens with the founder's own words.
+# Formatting either here would rewrite what nobody asked to change.
+.claude/
+.mktrue.json
+CLAUDE.md
+docs/
+README.md

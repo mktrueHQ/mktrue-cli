@@ -1,7 +1,5 @@
-import {
-  startAccessRequestBodySchema,
-  type StartAccessRequestResponse,
-} from "@__MKTRUE_NAME__/contracts";
+// prettier-ignore
+import { startAccessRequestBodySchema, type StartAccessRequestResponse } from "@__MKTRUE_NAME__/contracts";
 import type { FastifyInstance } from "fastify";
 
 import { startAccessRequest } from "../../contexts/access-request/application/start-access-request";

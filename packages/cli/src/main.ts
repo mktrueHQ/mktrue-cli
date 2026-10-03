@@ -9,6 +9,7 @@ import { runImport } from "./commands/import.js";
 import { runNew } from "./commands/new.js";
 import { runCheckSiblings } from "./commands/siblings.js";
 import { runSync } from "./commands/sync.js";
+import { HELP, isCommand, OPTIONS, USAGE } from "./help.js";
 import type {
   AuditPorts,
   DoctorPorts,
@@ -21,43 +22,10 @@ import type {
   SiblingPorts,
 } from "./ports.js";
 import { loadRepo } from "./repo.js";
-import { COLUMNS, clip, errorCode, internalError, refuse } from "./report.js";
+import { clip, columns, errorCode, internalError, refuse, setColumns } from "./report.js";
 import { refuseUnsafeShell, UnsafeShellArgument } from "./spawn.js";
 
-export const KIT_VERSION = "0.3.1";
-
-const USAGE = `mktrue <command>
-
-  doctor [--write]
-                   does this machine have what new and the skill need;
-                   --write makes exactly one change, the skill link
-  new <template> <name> [--answers <file>]
-                   make ./<name> from application, api-service, landing or
-                   infrastructure, verified and committed; --offline renders
-                   it without either. Without --answers, new asks its
-                   questions in a terminal
-  check            is this repository still true
-  check --siblings [--json]
-                   also compare each answers.siblings repository, read at
-                   its baseBranch through local git, with this one
-  sync [--write]   bring the method up to date; a dry run unless --write
-  sync --adopt     take the kit's version of files never under management
-  sync --restore   put back a kit-owned file this repository deleted
-  import           lift a template's files out of a product; a dry run
-  audit [--out <file>] [--json]
-                   measure this repository's local Claude Code transcripts
-                   into one HTML report; sends nothing. --json prints the
-                   report to stdout and writes no file
-  import --adopt-template  record the template's baseline; writes no file
-
-  --from <dir>     the product to import from, under the method (import)
-  --template <n>   the template to import into (import)
-
-  --answers <file> the answers to render from, as JSON (new)
-  --target <name>  the agent target to render for (default: claude-code)
-  --bench <dir>    the kit to render from (default: installed; new: embedded)
-  --help
-`;
+export const KIT_VERSION = "1.0.0";
 
 /** The exit for whatever `main` throws: a refused shell argument is exit 3, anything else a crash. */
 export function exitOnThrow(out: Output, error: unknown): ExitCode {
@@ -77,30 +45,16 @@ export async function main(
   auditPorts?: AuditPorts,
   siblingPorts?: SiblingPorts,
 ): Promise<ExitCode> {
+  setColumns(out.columns);
   let parsed;
   try {
     parsed = parseArgs({
       args: [...argv],
       allowPositionals: true,
-      options: {
-        write: { type: "boolean", default: false },
-        adopt: { type: "boolean", default: false },
-        restore: { type: "boolean", default: false },
-        "adopt-template": { type: "boolean", default: false },
-        target: { type: "string", default: "claude-code" },
-        bench: { type: "string" },
-        from: { type: "string" },
-        template: { type: "string" },
-        answers: { type: "string" },
-        offline: { type: "boolean", default: false },
-        out: { type: "string" },
-        json: { type: "boolean", default: false },
-        siblings: { type: "boolean", default: false },
-        help: { type: "boolean", default: false },
-      },
+      options: OPTIONS,
     });
   } catch (error) {
-    out.line(clip(`mktrue: ✗ usage · an argument was refused: ${errorCode(error)}`, COLUMNS));
+    out.line(clip(`mktrue: ✗ usage · an argument was refused: ${errorCode(error)}`, columns()));
     out.line(USAGE);
     return EXIT.USAGE;
   }
@@ -108,9 +62,18 @@ export async function main(
   const command = parsed.positionals[0];
   const benchFs = typeof bench === "function" ? bench(parsed.values.bench) : bench;
 
-  if (parsed.values.help === true || command === undefined) {
+  if (command === undefined) {
     out.line(USAGE);
-    return command === undefined && parsed.values.help !== true ? EXIT.USAGE : EXIT.TRUE;
+    return parsed.values.help === true ? EXIT.TRUE : EXIT.USAGE;
+  }
+  if (!isCommand(command)) {
+    out.line(clip(`mktrue: ✗ usage · there is no command "${command}"`, columns()));
+    out.line(USAGE);
+    return EXIT.USAGE;
+  }
+  if (parsed.values.help === true) {
+    out.line(HELP[command]);
+    return EXIT.TRUE;
   }
 
   if (command === "new") {
@@ -155,10 +118,6 @@ export async function main(
       });
     case "import":
       return runImportCommand(parsed.values, fs, out, openRepository);
-    default:
-      out.line(clip(`mktrue: ✗ usage · there is no command "${command}"`, COLUMNS));
-      out.line(USAGE);
-      return EXIT.USAGE;
   }
 }
 

@@ -1,3 +1,4 @@
+// prettier-ignore
 import type { ExampleItemDto, ExampleNoteDto } from "@__MKTRUE_NAME__/contracts";
 
 import type { ExampleItem } from "../../contexts/example/domain/example-item";

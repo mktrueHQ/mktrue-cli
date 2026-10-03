@@ -16,10 +16,10 @@ import "server-only";
  * Reads an env var, treating blank as absent.
  *
  * **`??` is the wrong operator for this, and it broke a deploy.** It falls back only on
- * `null` and `undefined`, and a Docker `ARG` that is declared but never passed arrives as an
+ * `null` and `undefined`, and a build argument that is declared but never passed arrives as an
  * **empty string**. So `NEXT_PUBLIC_SITE_URL ?? "https://…"` kept the empty string, `new URL("")`
  * threw `ERR_INVALID_URL`, and the production build died in `generateMetadata` on the first
- * prerendered page. The image had built fine locally, where the var was set.
+ * prerendered page. It had built fine locally, where the var was set.
  *
  * The same shape was latent on every other var here: a blank `NEXT_PUBLIC_OWNER_NAME` would have
  * printed "built and run by , a software engineer" on the about page rather than falling back.
@@ -34,9 +34,15 @@ function fromEnv(value: string | undefined, fallback: string): string {
 export const config = {
   /** Where "Go to the app" goes: __MKTRUE_TITLE__ itself. Blank hides every link to it (see {@link hasApp}). */
   appUrl: fromEnv(process.env.NEXT_PUBLIC_APP_URL, ""),
-  /** Server-side only. Resolves on the private network; never reaches the browser. */
-  apiBaseUrl: fromEnv(process.env.API_BASE_URL, "http://localhost:4201"),
+  /**
+   * Server-side only. Resolves on the private network; never reaches the browser.
+   *
+   * No default: blank means the request flow is off, and the routes refuse with 503 rather than
+   * reach for a localhost that answers nothing in production. Development sets it in `.env`.
+   */
+  apiBaseUrl: fromEnv(process.env.API_BASE_URL, "") || undefined,
   /** Shown on the legal pages. The person actually responsible for the data. */
+  // prettier-ignore
   ownerName: fromEnv(process.env.NEXT_PUBLIC_OWNER_NAME, "__MKTRUE_OWNER__"),
   /**
    * The site's own absolute origin, and the base for every canonical, hreflang and share-card URL.
@@ -46,10 +52,8 @@ export const config = {
    * required so a clone and CI both build, and **this is the one that must never be empty**: every
    * other value here degrades to a hidden link, while this one reaches `new URL()`.
    */
-  siteUrl: fromEnv(process.env.NEXT_PUBLIC_SITE_URL, "https://__MKTRUE_NAME__.example.com").replace(
-    /\/+$/,
-    "",
-  ),
+  // prettier-ignore
+  siteUrl: fromEnv(process.env.NEXT_PUBLIC_SITE_URL, "https://__MKTRUE_NAME__.example.com").replace(/\/+$/, ""),
   /**
    * Where a privacy or legal request goes.
    *
@@ -70,6 +74,12 @@ export const config = {
  * cover the source link and now covers every link on the page.
  */
 export const hasApp = config.appUrl.length > 0;
+
+/**
+ * True when the API is configured. Off, the request flow refuses: 503 on the routes, 404 on the
+ * page, and no link or sitemap entry leads to it.
+ */
+export const hasApi = config.apiBaseUrl !== undefined;
 
 /** True when a contact route is configured. Same fail-closed rule as {@link hasApp}. */
 export const hasContact = config.contactUrl.length > 0;

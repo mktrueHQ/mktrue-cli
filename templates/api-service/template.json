@@ -28,6 +28,11 @@
       "from": "answers.ports.api",
       "required": true,
       "kind": "text"
+    },
+    "PURPOSE": {
+      "from": "answers.purpose",
+      "required": true,
+      "kind": "text"
     }
   },
   "files": [
@@ -39,6 +44,12 @@
     },
     {
       "path": ".gitignore"
+    },
+    {
+      "path": ".prettierignore"
+    },
+    {
+      "path": ".prettierrc.json"
     },
     {
       "path": "README.md"
@@ -388,7 +399,11 @@
       "path": "turbo.json"
     }
   ],
-  "gates": ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test"],
+  "rules": {
+    "2": "rules/02-stack-and-versions.md",
+    "10": "rules/10-where-things-live.md"
+  },
+  "gates": ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test", "pnpm format:check"],
   "transforms": [
     {
       "find": " (D-\\d{3})",
@@ -396,5 +411,5 @@
       "lossy": true
     }
   ],
-  "tokenise": ["NAME", "NAME_UPPER", "OWNER", "LOCALES"]
+  "tokenise": ["NAME", "NAME_UPPER", "OWNER", "LOCALES", "PURPOSE"]
 }

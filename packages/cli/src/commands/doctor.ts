@@ -14,25 +14,21 @@ import {
 import { checkEnvironment } from "../environment.js";
 import { templatesPnpmPin } from "../pnpm-pin.js";
 import type { DoctorPorts, Output } from "../ports.js";
-import { clip, COLUMNS, printable } from "../report.js";
+import { clip, columns, printable } from "../report.js";
 
 export interface DoctorOptions {
   readonly write: boolean;
 }
 
-const WHAT_BUDGET = COLUMNS - "mktrue: ✗ doctor · ".length;
-const WHY_BUDGET = COLUMNS - "  why   ".length;
-const FIX_BUDGET = COLUMNS - "  fix   ".length;
-
 const doctorFinding = (what: string, why: string, fix: string, exit: ExitCode): Finding => ({
   gate: "doctor",
-  what: clip(what, WHAT_BUDGET),
-  why: clip(why, WHY_BUDGET),
-  fix: clip(fix, FIX_BUDGET),
+  what: clip(what, columns() - "mktrue: ✗ doctor · ".length),
+  why: clip(why, columns() - "  why   ".length),
+  fix: clip(fix, columns() - "  fix   ".length),
   exit,
 });
 
-const say = (out: Output, text: string) => out.line(clip(text, COLUMNS));
+const say = (out: Output, text: string) => out.line(clip(text, columns()));
 
 function checkNode(ports: DoctorPorts, out: Output): Finding[] {
   const version = ports.machine.nodeVersion();
@@ -146,6 +142,23 @@ async function checkSkill(ports: DoctorPorts, out: Output, write: boolean): Prom
     return [];
   }
 
+  if (!write && state.kind === "link") {
+    const elsewhere = printable(tilde(state.realPath, ports.machine.homeDir()));
+    const ours = (await ports.machine.readSkillName(state.realPath)) === "mktrue";
+    return [
+      doctorFinding(
+        `the skill link points at ${elsewhere}`,
+        ours
+          ? "that is another install's skill, not the one this mktrue carries"
+          : "that is not a mktrue skill; doctor --write replaces only its own link",
+        ours
+          ? "run mktrue doctor --write"
+          : "remove that link by hand, then run mktrue doctor --write",
+        EXIT.ENVIRONMENT,
+      ),
+    ];
+  }
+
   if (!write) {
     return [
       doctorFinding(
@@ -233,7 +246,7 @@ export async function runDoctor(
   collect(await checkOnPath(ports, out));
   collect(await checkSkill(ports, out, options.write));
 
-  await checkOptional(ports, out, "docker", "the infrastructure template (6d)");
+  await checkOptional(ports, out, "docker", "the infrastructure template");
   await checkOptional(ports, out, "claude", "the skill");
 
   collect(await checkModel(ports, out));

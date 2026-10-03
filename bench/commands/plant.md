@@ -22,6 +22,9 @@ A test you have not seen fail is a test you have not seen work.
 
 - Never leave a plant in the tree. Check before you finish, every time.
 - Never plant in code the slice did not touch.
+- **A plant and the test run that proves it touch scratch space only**: a fresh directory made for the plant, with `mktemp -d`. Never the real home directory. Never the shared temporary directory itself, or anything in it the plant did not create.
+- **Never plant in shared test support** — a helper every suite imports. One bad helper acts on the whole machine, from every suite at once.
+- **A plant that needs a destructive call replaces the target with the scratch directory first**, then plants. A deletion aimed anywhere else is not a plant.
 - A plant that cannot be written for some path is itself a finding: that path has no observable behaviour to test.
 
 ## Done when

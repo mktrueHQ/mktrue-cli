@@ -10,7 +10,7 @@ import { buildServer } from "./server";
 try {
   process.loadEnvFile(resolve(import.meta.dirname, "../../../.env"));
 } catch {
-  // No root .env — the prod image, where env comes from the platform.
+  // No root .env — production, where env comes from the platform.
 }
 
 const config = loadConfig();

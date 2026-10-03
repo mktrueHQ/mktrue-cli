@@ -5,7 +5,7 @@ import { basename, extname, isAbsolute, join } from "node:path";
 import { EXIT, type ExitCode } from "@mktrue/core";
 
 import type { Output } from "./ports.js";
-import { clip, COLUMNS, printable, refuse } from "./report.js";
+import { clip, columns, printable, refuse } from "./report.js";
 
 /** The machine a command is resolved on; injected so Windows rules run under test on any OS. */
 export interface Host {
@@ -169,7 +169,7 @@ export function refuseUnsafeShell(out: Output, error: UnsafeShellArgument): Exit
     "environment",
     clip(
       `refused to run ${printable(error.command)} · an argument holds ${error.character}`,
-      COLUMNS - "mktrue: ✗ environment · ".length,
+      columns() - "mktrue: ✗ environment · ".length,
     ),
     "a .cmd runs through cmd.exe, which reads that character as its own",
     'rename the path or value so it holds no % ! " or line break',

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "0.3.1",
+  "version": "1.0.0",
   "slotSyntax": "__MKTRUE_<KEY>__",
   "slots": {
     "NAME": {
@@ -31,7 +31,8 @@
     "DATA_CLASSES": {
       "from": "answers.dataClasses",
       "required": true,
-      "kind": "list"
+      "kind": "list",
+      "empty": "nothing sensitive"
     },
     "AUTH": {
       "from": "answers.auth",
@@ -75,6 +76,21 @@
     },
     "KIT_VERSION": {
       "from": "derived.kitVersion",
+      "required": true,
+      "kind": "text"
+    },
+    "TEMPLATE": {
+      "from": "derived.template",
+      "required": true,
+      "kind": "text"
+    },
+    "TEMPLATE_VERSION": {
+      "from": "derived.templateVersion",
+      "required": true,
+      "kind": "text"
+    },
+    "DATE": {
+      "from": "derived.date",
       "required": true,
       "kind": "text"
     },
@@ -129,18 +145,18 @@
       "model": "opus",
       "effort": "xhigh",
       "slots": ["NAME", "PURPOSE"],
-      "report": "$SLICE/architect.md"
+      "report": "<main checkout>/.mktrue/slices/<milestone>-kickoff/architect.md"
     },
     {
       "id": "implementer",
       "title": "Implementer",
       "body": "agents/implementer.md",
-      "description": "Builds one focused, well-tested slice from $SLICE/brief.md, following CLAUDE.md and the milestone plan. The lead delegates non-trivial changes here, then hands the result to the reviewer. Does not commit or open pull requests.",
+      "description": "Builds one focused, well-tested slice from the brief in its slice folder, following CLAUDE.md and the milestone plan. The lead delegates non-trivial changes here, then hands the result to the reviewer. Does not commit or open pull requests.",
       "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
       "model": "opus",
       "effort": "high",
       "slots": ["GATES"],
-      "report": "$SLICE/implementer.md"
+      "report": "<slice folder>/implementer.md"
     },
     {
       "id": "ui-engineer",
@@ -151,7 +167,7 @@
       "model": "opus",
       "effort": "high",
       "slots": ["NAME", "AUDIENCE_TEST", "LANGUAGES"],
-      "report": "$SLICE/ui-engineer.md"
+      "report": "<slice folder>/ui-engineer.md"
     },
     {
       "id": "security-auditor",
@@ -162,7 +178,7 @@
       "model": "opus",
       "effort": "high",
       "slots": ["NAME", "STAKES", "DATA_CLASSES", "AUDIT_TRIGGERS"],
-      "report": "$SLICE/audit.md"
+      "report": "<slice folder>/audit.md"
     },
     {
       "id": "reviewer",
@@ -173,7 +189,7 @@
       "model": "opus",
       "effort": "high",
       "slots": [],
-      "report": "$SLICE/review.md"
+      "report": "<slice folder>/review.md"
     },
     {
       "id": "docs-writer",
@@ -184,7 +200,7 @@
       "model": "sonnet",
       "effort": "low",
       "slots": ["NAME", "OWNER", "BUDGET_STATE", "BUDGET_RULES"],
-      "report": "$SLICE/docs.md"
+      "report": "<slice folder>/docs.md"
     }
   ],
   "contracts": [
@@ -373,6 +389,25 @@
       "slots": []
     },
     {
+      "id": "created-log",
+      "title": "The created log",
+      "body": "docs/created.md",
+      "renderTo": "docs/log/",
+      "slots": [
+        "NAME",
+        "DATE",
+        "KIT_VERSION",
+        "TEMPLATE",
+        "TEMPLATE_VERSION",
+        "PURPOSE",
+        "OWNER",
+        "AUTH",
+        "LANGUAGES",
+        "DATA_CLASSES",
+        "GATES"
+      ]
+    },
+    {
       "id": "roadmap",
       "title": "Roadmap",
       "body": "docs/roadmap.md",
@@ -400,6 +435,7 @@
       "commands": ".claude/commands/__MKTRUE_COMMAND_ID__.md",
       "rules": "CLAUDE.md",
       "settings": ".claude/settings.json",
+      "settingsBody": "settings/claude-code.json",
       "roleFrontmatter": ["name", "description", "tools", "model", "effort"],
       "vocabulary": {
         "models": ["opus", "sonnet", "haiku", "inherit"],

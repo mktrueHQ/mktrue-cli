@@ -17,8 +17,9 @@ apps/web
 
 Running it locally, with the API: `pnpm --filter @__MKTRUE_NAME__/api dev` and
 `pnpm --filter @__MKTRUE_NAME__/web dev`. The web reads the repo-root `.env`, the same file
-the API reads. Beyond the API's variables it reads three: `API_BASE_URL` (blank means
-`http://localhost:__MKTRUE_API_PORT__`), and the Clerk pair
+the API reads. Beyond the API's variables it reads three: `API_BASE_URL` (no default: blank,
+every call to the API is refused as unavailable and nothing is fetched; `.env.example` sets
+it to `http://localhost:__MKTRUE_API_PORT__`, the API's development port), and the Clerk pair
 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`.
 
 ## The contract drives the web, and the compiler says so

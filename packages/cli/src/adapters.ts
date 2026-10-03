@@ -34,7 +34,7 @@ import { questionsFor } from "@mktrue/core";
 import { readOnlyGit } from "./git.js";
 import { selfLayout, skillHomeOf } from "./self.js";
 import { type Host, processHost, resolveOnWindows, spawnCommand } from "./spawn.js";
-import { clip, COLUMNS, printable } from "./report.js";
+import { clip, columns, printable, terminalColumns } from "./report.js";
 import {
   type AuditPorts,
   CANCELLED,
@@ -208,6 +208,7 @@ export function terminalOutput(stream: NodeJS.WriteStream = process.stdout): Out
   const say = (text: string) => stream.write(`${text}\n`);
 
   return {
+    columns: terminalColumns(stream.isTTY === true, stream.columns),
     line: say,
     finding(finding: Finding) {
       say(`mktrue: ✗ ${finding.gate} · ${finding.what}`);
@@ -647,7 +648,7 @@ export function textRender(question: Question) {
       const prefix = `mktrue: ${label}· `;
       const value = sanitizeAnswer(this.value ?? "");
       const shown = value.trim() === "" ? (question.default ?? "") : value;
-      return `${prefix}${clip(shown, COLUMNS - prefix.length)}`;
+      return `${prefix}${clip(shown, columns() - prefix.length)}`;
     }
     if (this.state === "cancel") return "";
     const hintLine = `mktrue: ${label}· ${question.hint}`;
@@ -655,7 +656,7 @@ export function textRender(question: Question) {
     const shown =
       typed.length > 0 ? typed : question.default !== undefined ? `[${question.default}]` : "";
     const prefix = `mktrue: ${label}› `;
-    const inputLine = `${prefix}${clip(shown, COLUMNS - prefix.length - 1)}${CURSOR}`;
+    const inputLine = `${prefix}${clip(shown, columns() - prefix.length - 1)}${CURSOR}`;
     return `${hintLine}\n${inputLine}`;
   };
 }

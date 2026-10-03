@@ -5,13 +5,13 @@ import { resolve } from "node:path";
 import { authEnabled } from "./auth-enabled";
 
 export interface WebConfig {
-  readonly apiBaseUrl: string;
+  readonly apiBaseUrl: string | undefined;
   readonly authEnabled: boolean;
 }
 
 export function parseConfig(env: NodeJS.ProcessEnv): WebConfig {
   return {
-    apiBaseUrl: env.API_BASE_URL || "http://localhost:__MKTRUE_API_PORT__",
+    apiBaseUrl: env.API_BASE_URL?.trim() || undefined,
     authEnabled: authEnabled(env),
   };
 }

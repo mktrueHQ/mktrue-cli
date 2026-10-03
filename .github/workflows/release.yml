@@ -38,8 +38,9 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm build
 
-      # The snapshot holds no docs/, so check runs on a fixture, as binaries do.
-      - name: check true on a fixture
+      # The snapshot holds no docs/, so check runs on a fixture, as binaries do:
+      # one finding before sync, true after it.
+      - name: check true on a fixture, once sync has written it
         run: |
           set -eu
           work="$(mktemp -d)"
@@ -52,7 +53,19 @@ jobs:
           printf '# Design\n'  > "$work/repo/docs/design/m1.md"
           printf '# Log\n'     > "$work/repo/docs/log/a.md"
           cd "$work/repo"
+          # Never synced: the one finding is the settings file sync has yet to write.
+          status=0
+          node "$GITHUB_WORKSPACE/packages/cli/dist/mktrue.js" check > ../first-check.txt 2>&1 || status=$?
+          cat ../first-check.txt
+          test "$status" -eq 1
+          grep -qF 'settings · .claude/settings.json is missing' ../first-check.txt
+          grep -qF 'mktrue: 1 finding · exit 1' ../first-check.txt
+          node "$GITHUB_WORKSPACE/packages/cli/dist/mktrue.js" sync --write --adopt
+          node "$GITHUB_WORKSPACE/packages/cli/dist/mktrue.js" sync > ../second-sync.txt
+          cat ../second-sync.txt
+          grep -q '^mktrue: 0 updates · ' ../second-sync.txt   # idempotent
           node "$GITHUB_WORKSPACE/packages/cli/dist/mktrue.js" check
+          test -f .claude/settings.json
 
       - name: prove the package as a user gets it
         run: node scripts/pack-proof.mjs
@@ -118,7 +131,7 @@ jobs:
         if: runner.os == 'macOS'
         run: codesign --verify --verbose "$RUNNER_TEMP"/sea/mktrue-*
 
-      - name: --help, then check true on a fixture
+      - name: --help, then check true on a fixture, once sync has written it
         run: |
           set -eu
           binary="$RUNNER_TEMP/unpacked/mktrue"
@@ -133,7 +146,19 @@ jobs:
           printf '# Design\n'  > "$work/repo/docs/design/m1.md"
           printf '# Log\n'     > "$work/repo/docs/log/a.md"
           cd "$work/repo"
+          # Never synced: the one finding is the settings file sync has yet to write.
+          status=0
+          "$binary" check > ../first-check.txt 2>&1 || status=$?
+          cat ../first-check.txt
+          test "$status" -eq 1
+          grep -qF 'settings · .claude/settings.json is missing' ../first-check.txt
+          grep -qF 'mktrue: 1 finding · exit 1' ../first-check.txt
+          "$binary" sync --write --adopt
+          "$binary" sync > ../second-sync.txt
+          cat ../second-sync.txt
+          grep -q '^mktrue: 0 updates · ' ../second-sync.txt   # idempotent
           "$binary" check
+          test -f .claude/settings.json
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

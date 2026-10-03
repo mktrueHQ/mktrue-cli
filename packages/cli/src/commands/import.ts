@@ -13,11 +13,11 @@ import {
 } from "@mktrue/core";
 
 import type { FileSystem, Output, ReadOnlyFileSystem } from "../ports.js";
-import { COLUMNS, clip, errorCode, refuse, row } from "../report.js";
+import { columns, clip, errorCode, refuse, row } from "../report.js";
 
-const WHAT_WIDTH = COLUMNS - "mktrue: ✗ import · ".length;
+const whatWidth = (): number => columns() - "mktrue: ✗ import · ".length;
 
-const DETAIL_WIDTH = COLUMNS - "  fix   ".length;
+const detailWidth = (): number => columns() - "  fix   ".length;
 
 export interface ImportOptions {
   readonly template: string;
@@ -63,9 +63,12 @@ export async function runImport(
       return refuse(
         out,
         "import",
-        clip(`${where} did not parse: ${parsed.error.issues[0]?.message ?? "invalid"}`, WHAT_WIDTH),
+        clip(
+          `${where} did not parse: ${parsed.error.issues[0]?.message ?? "invalid"}`,
+          whatWidth(),
+        ),
         "the manifest names every path that would be read and written",
-        clip(`fix the error named above in ${where}`, DETAIL_WIDTH),
+        clip(`fix the error named above in ${where}`, detailWidth()),
         EXIT.USAGE,
       );
     }
@@ -74,9 +77,9 @@ export async function runImport(
     return refuse(
       out,
       "import",
-      clip(`${where} is not JSON: ${errorCode(error)}`, WHAT_WIDTH),
+      clip(`${where} is not JSON: ${errorCode(error)}`, whatWidth()),
       "the manifest names every path that would be read and written",
-      clip(`fix the syntax error in ${where}`, DETAIL_WIDTH),
+      clip(`fix the syntax error in ${where}`, detailWidth()),
       EXIT.USAGE,
     );
   }
@@ -89,7 +92,7 @@ export async function runImport(
     return refuse(
       out,
       "import",
-      clip(`the source's .mktrue.json is not JSON: ${errorCode(error)}`, WHAT_WIDTH),
+      clip(`the source's .mktrue.json is not JSON: ${errorCode(error)}`, whatWidth()),
       "the answers it declares are the whole of the tokenisation table",
       "fix the syntax error in the source repository's .mktrue.json",
       EXIT.USAGE,
@@ -103,7 +106,7 @@ export async function runImport(
       "import",
       clip(
         `the source's .mktrue.json did not parse: ${config.error.issues[0]?.message ?? "invalid"}`,
-        WHAT_WIDTH,
+        whatWidth(),
       ),
       "the answers it declares are the whole of the tokenisation table",
       "run mktrue check in the source repository and fix what it reports",
@@ -221,7 +224,7 @@ export async function runImport(
         "a write failed before anything moved, so the template is untouched",
         clip(
           `${errorCode(error)} on a write: make the template writable, then run import again`,
-          DETAIL_WIDTH,
+          detailWidth(),
         ),
         EXIT.FINDINGS,
       );

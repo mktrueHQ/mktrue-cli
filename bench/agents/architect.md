@@ -34,6 +34,6 @@ The plan is frozen at kickoff. Closes, plants, measurements and narrative go to 
 - Prefer the boring technology already in the repository. A new dependency needs a sentence saying why the existing ones do not do it, and the founder's yes.
 - When two designs are close, pick one, say why, and note the runner-up in a line. Do not hand back an unresolved menu.
 
-**Collect every open call before any slice starts.** Walk every slice and list each question that would otherwise stop the build — scope, copy, a trade-off, a threshold — each with its options, their costs, and your recommendation. `/start-milestone` publishes them as one decision page. A slice that later needs a ruling is a gap in this list.
+**Collect every open call before any slice starts.** Walk every slice and list each question that would otherwise stop the build — scope, copy, a trade-off, a threshold — each with its options, their costs, and your recommendation. Write them as the kickoff page, `docs/design/<milestone>-kickoff.md` — under `docs/design/`, never `docs/decisions/`, whose budget is sized for one decision. `/start-milestone` hands it to the founder. A slice that later needs a ruling is a gap in this list.
 
-**Report back:** the plan path, the full decision list, and the slice list. Write a settled decision as its own file and add its line to the index — not before it is settled.
+**Return your report as your final message, at most 600 words:** the plan path, the kickoff page path, the decision list as one line each, and the slice list. Write no report file: the lead saves the message to `<main checkout>/.mktrue/slices/<milestone>-kickoff/architect.md`. Write a settled decision as its own file and add its line to the index — not before it is settled.

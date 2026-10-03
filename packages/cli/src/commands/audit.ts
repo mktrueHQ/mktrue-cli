@@ -28,7 +28,7 @@ import {
 } from "@mktrue/core";
 
 import type { AuditPorts, Output, TranscriptEntry, TranscriptStore } from "../ports.js";
-import { COLUMNS, clip, errorCode, printable, refuse } from "../report.js";
+import { columns, clip, errorCode, printable, refuse } from "../report.js";
 
 export interface AuditOptions {
   readonly out: string | undefined;
@@ -386,7 +386,7 @@ function refuseEvent(out: Output, { rejected }: Rejected): ExitCode {
   return refuse(
     out,
     "internal",
-    clip(what, COLUMNS - "mktrue: ✗ internal · ".length),
+    clip(what, columns() - "mktrue: ✗ internal · ".length),
     "a field outside the schema could carry transcript content into the report",
     "report it with the command you ran; nothing was written",
     EXIT.ENVIRONMENT,
@@ -575,6 +575,6 @@ export async function runAudit(
   }
   const shown = shownTarget(ports, target, options.out, trees);
   lines.push(`mktrue: report · ${shown}${existing === "file" ? " · replaced a file" : ""}`);
-  for (const line of lines) out.line(clip(line, COLUMNS));
+  for (const line of lines) out.line(clip(line, columns()));
   return EXIT.TRUE;
 }

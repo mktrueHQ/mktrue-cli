@@ -33,6 +33,7 @@ async function server(overrides = {}) {
     clock: fixedClock(AT),
     codeGenerator: fixedCodeGenerator(CODE),
     tokenSigner: createHmacTokenSigner("test-secret"),
+    // prettier-ignore
     destinationEmail: "__MKTRUE_OWNER__@example.com",
     ...overrides,
   });
@@ -94,7 +95,7 @@ describe("POST /access-request/start", () => {
   });
 
   it("answers 503 when the mail provider rejects us, not 500", async () => {
-    // Found by running the real image against a bad Resend key. An unmapped provider error fell
+    // Found by running the built service against a bad Resend key. An unmapped provider error fell
     // through to a 500, and the form's copy for an unknown status was "that address does not look
     // right" — blaming the requester for our own outage and sending them off to edit a perfectly
     // good address.
@@ -299,6 +300,7 @@ describe("logging", () => {
       clock: fixedClock(AT),
       codeGenerator: fixedCodeGenerator(CODE),
       tokenSigner: createHmacTokenSigner("test-secret"),
+      // prettier-ignore
       destinationEmail: "__MKTRUE_OWNER__@example.com",
       repository: unavailableRepository(
         new Error(

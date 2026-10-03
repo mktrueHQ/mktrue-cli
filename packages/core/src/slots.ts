@@ -7,11 +7,17 @@ export function slotsIn(text: string): Set<string> {
   return new Set([...text.matchAll(SLOT_PATTERN)].map((match) => match[1] as string));
 }
 
-export function formatSlotValue(value: unknown, kind: string, separator?: string): string {
+export function formatSlotValue(
+  value: unknown,
+  kind: string,
+  separator?: string,
+  empty?: string,
+): string {
   if (kind === "path" && typeof value === "string") {
     return value === "" ? "not in this repository" : `\`${value}\``;
   }
   if (Array.isArray(value)) {
+    if (value.length === 0 && empty !== undefined) return empty;
     return value.map(String).join(separator ?? ", ");
   }
   if (kind === "number" && typeof value === "number") {
@@ -53,13 +59,15 @@ export function escapeContextForPath(path: string): EscapeContext {
 export function escapeForContext(value: string, context: EscapeContext): string {
   switch (context) {
     case "js":
+      // Hex escapes mean the same in a ", ' or ` literal, so no lint rule calls one useless and
+      // Prettier never picks another quote for the string.
       return value
         .replace(/\\/g, "\\\\")
-        .replace(/`/g, "\\`")
-        .replace(/"/g, '\\"')
-        .replace(/'/g, "\\'")
-        .replace(/\$\{/g, "\\${")
-        .replace(/\*\//g, "*\\/");
+        .replace(/`/g, "\\x60")
+        .replace(/"/g, "\\x22")
+        .replace(/'/g, "\\x27")
+        .replace(/\$\{/g, "\\x24{")
+        .replace(/\*\//g, "*\\x2f");
     case "json":
       return JSON.stringify(value).slice(1, -1);
     case "icu":
@@ -127,7 +135,7 @@ export function slotValues(
       return (node as Record<string, unknown>)[part];
     }, sources);
     if (resolved === undefined) continue;
-    values.set(key, formatSlotValue(resolved, slot.kind, slot.separator));
+    values.set(key, formatSlotValue(resolved, slot.kind, slot.separator, slot.empty));
   }
   return values;
 }

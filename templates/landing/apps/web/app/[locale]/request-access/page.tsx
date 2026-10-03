@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { RequestAccessForm } from "@/app/components/request-access-form";
 import { SiteFooter } from "@/app/components/site-footer";
 import { SiteHeader } from "@/app/components/site-header";
-import { config, hasApp } from "@/lib/config";
+import { config, hasApi, hasApp } from "@/lib/config";
 import { buildPageMetadata } from "@/lib/seo";
 
 type Props = { readonly params: Promise<{ readonly locale: string }> };
@@ -31,6 +32,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * the app all render server-side, and only the form itself needs the client.
  */
 export default async function RequestAccessPage({ params }: Props) {
+  if (!hasApi) notFound();
+
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "RequestAccess" });

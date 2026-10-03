@@ -3,11 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 /**
  * Configuration has to survive a blank environment, not just a missing one.
  *
- * **This is the deploy that failed.** A Docker `ARG` that is declared but never passed
+ * **This is the deploy that failed.** A build argument that is declared but never passed
  * arrives as an empty string, not as `undefined`, so `??` keeps it. `NEXT_PUBLIC_SITE_URL` reached
  * `new URL("")`, which throws `ERR_INVALID_URL`, and the production build died while prerendering
- * `/en`. It had built fine locally and in the `landing-web` target, because both had the var set:
- * only `landing-api`, which shares the builder stage and passes no web args, hit the empty case.
+ * `/en`. It had built fine locally, where the var was set: only a build that passed no web
+ * arguments hit the empty case.
  *
  * So every case below sets the var to `""` rather than deleting it. Deleting it tests `undefined`,
  * which was never the broken path.
@@ -46,10 +46,20 @@ describe("config", () => {
     expect(config.ownerName).not.toBe("");
   });
 
-  it("keeps a usable API base when the var is blank", async () => {
-    const { config } = await loadConfig(BLANK);
+  it("has no API base when the var is blank or whitespace, so the request flow is off", async () => {
+    for (const blank of ["", "   "]) {
+      const { config, hasApi } = await loadConfig({ ...BLANK, API_BASE_URL: blank });
 
-    expect(() => new URL(config.apiBaseUrl)).not.toThrow();
+      expect(config.apiBaseUrl).toBeUndefined();
+      expect(hasApi).toBe(false);
+    }
+  });
+
+  it("reads a configured API base, trimmed", async () => {
+    const { config, hasApi } = await loadConfig({ ...BLANK, API_BASE_URL: " http://api:4201 " });
+
+    expect(config.apiBaseUrl).toBe("http://api:4201");
+    expect(hasApi).toBe(true);
   });
 
   it("treats a blank optional URL as absent, so its links stay hidden", async () => {
@@ -74,13 +84,17 @@ describe("config", () => {
   it("trims a configured value rather than trusting it", async () => {
     const { config, hasApp } = await loadConfig({
       ...BLANK,
+      // prettier-ignore
       NEXT_PUBLIC_APP_URL: "  https://__MKTRUE_NAME__.example.com  ",
+      // prettier-ignore
       NEXT_PUBLIC_SITE_URL: "https://get-__MKTRUE_NAME__.example.com/",
     });
 
+    // prettier-ignore
     expect(config.appUrl).toBe("https://__MKTRUE_NAME__.example.com");
     expect(hasApp).toBe(true);
     // The trailing slash goes, or every canonical would carry a double slash.
+    // prettier-ignore
     expect(config.siteUrl).toBe("https://get-__MKTRUE_NAME__.example.com");
   });
 });

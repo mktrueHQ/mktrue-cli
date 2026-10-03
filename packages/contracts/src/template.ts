@@ -81,6 +81,9 @@ export const templateManifestSchema = z.object({
   slots: z.record(slotKeySchema, slotSchema),
   files: z.array(templateFileSchema).min(1),
   gates: z.array(z.string().min(1)),
+  rules: z
+    .record(z.string().regex(/^[1-9][0-9]*$/, "a rules section number"), relativePathSchema)
+    .default({}),
   requires: z.array(templateRequirementSchema).default(["pnpm"]),
   transforms: z.array(templateTransformSchema).default([]),
   tokenise: z.array(slotKeySchema).default([]),

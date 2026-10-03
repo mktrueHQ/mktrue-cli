@@ -27,7 +27,7 @@ import {
   type TemporaryTree,
 } from "../ports.js";
 import { loadBenchFrom, loadRepo, loadTemplateSources } from "../repo.js";
-import { clip, COLUMNS, errorCode, printable, refuse } from "../report.js";
+import { clip, columns, errorCode, printable, refuse } from "../report.js";
 import { runCheck } from "./check.js";
 
 export interface NewOptions {
@@ -57,7 +57,7 @@ export function parseAnswers(raw: unknown, source: string, out: Output): Answers
       "usage",
       clip(
         `${printable(source)} · ${where}${issue?.message ?? "invalid"}`,
-        COLUMNS - "mktrue: ✗ usage · ".length,
+        columns() - "mktrue: ✗ usage · ".length,
       ),
       "new renders every answer into the repository, so a wrong one would ship",
       "correct the answers; its fields are the answers in .mktrue.json",
@@ -88,7 +88,7 @@ async function readAnswersFromFile(
     return refuse(
       out,
       "usage",
-      clip(`cannot read ${printable(path)}`, COLUMNS - "mktrue: ✗ usage · ".length),
+      clip(`cannot read ${printable(path)}`, columns() - "mktrue: ✗ usage · ".length),
       "the answers are all new renders from",
       fix,
       EXIT.USAGE,
@@ -103,7 +103,7 @@ async function readAnswersFromFile(
       "usage",
       clip(
         `${printable(path)} is not JSON: ${errorCode(error)}`,
-        COLUMNS - "mktrue: ✗ usage · ".length,
+        columns() - "mktrue: ✗ usage · ".length,
       ),
       "the answers are all new renders from",
       fix,
@@ -136,14 +136,14 @@ async function askAll(
         replies[question.key] = reply;
         break;
       }
-      out.line(clip(`mktrue: ✗ ${question.label} · ${error}`, COLUMNS));
+      out.line(clip(`mktrue: ✗ ${question.label} · ${error}`, columns()));
       if (attempts >= 3) {
         return refuse(
           out,
           "usage",
           clip(
             `${question.label} was never answered · three tries used`,
-            COLUMNS - "mktrue: ✗ usage · ".length,
+            columns() - "mktrue: ✗ usage · ".length,
           ),
           "a refused answer would ship, so new stops rather than guessing",
           "run new again, or pass --answers <file>",
@@ -168,7 +168,7 @@ async function promptForAnswers(
       "no terminal to ask in",
       clip(
         "new asks its questions in a terminal, reading nothing piped in",
-        COLUMNS - "  why   ".length,
+        columns() - "  why   ".length,
       ),
       "pass --answers <file>",
       EXIT.USAGE,
@@ -181,7 +181,7 @@ async function promptForAnswers(
       "usage",
       clip(
         `new does not offer the template ${printable(options.template)}`,
-        COLUMNS - "mktrue: ✗ usage · ".length,
+        columns() - "mktrue: ✗ usage · ".length,
       ),
       why,
       fix,
@@ -195,7 +195,7 @@ async function promptForAnswers(
       "usage",
       clip(
         `the name ${printable(options.name)} · ${name.error.issues[0]?.message ?? "invalid"}`,
-        COLUMNS - "mktrue: ✗ usage · ".length,
+        columns() - "mktrue: ✗ usage · ".length,
       ),
       "new renders every answer into the repository, so a wrong name would ship",
       "pass a name that is lowercase, digits and hyphens",
@@ -211,7 +211,7 @@ async function promptForAnswers(
       "new",
       clip(
         `${options.bench ?? "the embedded copy"} holds no bench/bench.json`,
-        COLUMNS - "mktrue: ✗ new · ".length,
+        columns() - "mktrue: ✗ new · ".length,
       ),
       "the bench is the method; a repository without it is only a template",
       "pass --bench a kit checkout, or drop --bench to use the embedded copy",
@@ -235,7 +235,7 @@ async function promptForAnswers(
   out.line(
     clip(
       `mktrue: new · ${options.template} ${options.name} · ${questions.length} questions`,
-      COLUMNS,
+      columns(),
     ),
   );
   out.line("mktrue: ctrl-c to stop");
@@ -290,7 +290,7 @@ async function kept(
   return refuse(
     out,
     "new",
-    clip(what, COLUMNS - "mktrue: ✗ new · ".length),
+    clip(what, columns() - "mktrue: ✗ new · ".length),
     why,
     log
       ? "read the log, fix the cause, delete the kept tree, and run new again"
@@ -314,7 +314,7 @@ export async function runNew(
   const answers = parseAnswers(collected.raw, collected.source, out);
   if (typeof answers === "number") return answers;
 
-  out.line(clip(`mktrue: templates · ${options.bench ?? "embedded"}`, COLUMNS));
+  out.line(clip(`mktrue: templates · ${options.bench ?? "embedded"}`, columns()));
   const bench = await loadBenchFrom(benchFs);
   if (bench.findings.length > 0) return report(out, bench.findings);
   if (bench.manifest === undefined) {
@@ -323,7 +323,7 @@ export async function runNew(
       "new",
       clip(
         `${options.bench ?? "the embedded copy"} holds no bench/bench.json`,
-        COLUMNS - "mktrue: ✗ new · ".length,
+        columns() - "mktrue: ✗ new · ".length,
       ),
       "the bench is the method; a repository without it is only a template",
       "pass --bench a kit checkout, or drop --bench to use the embedded copy",
@@ -363,7 +363,7 @@ export async function runNew(
     return refuse(
       out,
       "new",
-      clip(`${basename(path)} is already there`, COLUMNS - "mktrue: ✗ new · ".length),
+      clip(`${basename(path)} is already there`, columns() - "mktrue: ✗ new · ".length),
       "new makes its log fresh, and never writes through what is already there",
       "remove it, then run new again",
       EXIT.FINDINGS,
@@ -372,7 +372,7 @@ export async function runNew(
   out.line(
     clip(
       `mktrue: new · ${options.template} ${plan.templateVersion} · ${plan.files.length} files · ${tree.name}`,
-      COLUMNS,
+      columns(),
     ),
   );
 
@@ -406,7 +406,7 @@ export async function runNew(
       for (const gate of plan.gates) {
         const run = await ports.runner.run(gate.split(/\s+/), tree);
         const seconds = run.seconds.toFixed(1);
-        out.line(clip(`mktrue: gate · ${gate} · ${run.ok ? "✓" : "✗"} ${seconds}s`, COLUMNS));
+        out.line(clip(`mktrue: gate · ${gate} · ${run.ok ? "✓" : "✗"} ${seconds}s`, columns()));
         if (!run.ok) {
           return kept(
             out,
@@ -452,7 +452,7 @@ export async function runNew(
           );
         }
       }
-      out.line(clip(`mktrue: git · ${message}`, COLUMNS));
+      out.line(clip(`mktrue: git · ${message}`, columns()));
     }
 
     if ((await ports.workspace.inspect(options.name)) === "occupied") return occupied(tree);
@@ -467,12 +467,12 @@ export async function runNew(
   }
 
   if (options.offline) {
-    out.verdict(clip(`mktrue: ${options.name} rendered · not verified · exit 0`, COLUMNS));
-    out.line(clip(`mktrue: next · cd ${options.name}, install, run the gates, commit`, COLUMNS));
+    out.verdict(clip(`mktrue: ${options.name} rendered · not verified · exit 0`, columns()));
+    out.line(clip(`mktrue: next · cd ${options.name}, install, run the gates, commit`, columns()));
   } else {
-    out.verdict(clip(`mktrue: ${options.name} is true`, COLUMNS));
+    out.verdict(clip(`mktrue: ${options.name} is true`, columns()));
     out.line(
-      clip(`mktrue: next · cd ${options.name}, then /create-roadmap in your agent`, COLUMNS),
+      clip(`mktrue: next · cd ${options.name}, then /create-roadmap in your agent`, columns()),
     );
   }
   return EXIT.TRUE;

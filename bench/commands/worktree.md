@@ -8,7 +8,7 @@ One slice, one worktree. The integration branch is never the desk.
 2. Create the worktree under `.claude/worktrees/<slice-id>`, so nothing outside the checkout changes and the agent harness can find it.
 3. Install dependencies there only if the slice touches them.
 4. Work only inside it, by absolute path, for the whole slice.
-5. After `/close-slice` merges, remove the worktree and delete the branch.
+5. `/close-slice` removes the worktree and deletes the branch, and only once it has read the pull request's state as `MERGED`. Never before.
 
 ## Rules
 

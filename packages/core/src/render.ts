@@ -70,6 +70,16 @@ export function roleFrontmatter(role: Role, target: Target): string {
   return `---\n${lines.join("\n")}\n---\n`;
 }
 
+const OWNERSHIP_COMMENT = /^<!--.*-->$/;
+
+/** The bench section's heading and ownership comment, then the body a template supplies. */
+function underHeading(benchBody: string, supplied: string): string {
+  const lines = benchBody.split("\n");
+  const comment = lines.findIndex((line) => OWNERSHIP_COMMENT.test(line.trim()));
+  const head = lines.slice(0, comment === -1 ? 1 : comment + 1).join("\n");
+  return `${head}\n\n${supplied.trim()}\n`;
+}
+
 export function missingTargetFinding(
   manifest: BenchManifest,
   targetName: string,
@@ -89,7 +99,13 @@ export function renderBench(
   bodies: ReadonlyMap<string, string>,
   values: ReadonlyMap<string, string>,
   targetName: string,
-): { files: RenderedFile[]; rules: RenderedRules; findings: Finding[] } {
+  sectionBodies: ReadonlyMap<number, string> = new Map(),
+): {
+  files: RenderedFile[];
+  rules: RenderedRules;
+  settings: RenderedFile | undefined;
+  findings: Finding[];
+} {
   const findings: Finding[] = [];
   const files: RenderedFile[] = [];
   const missing = missingTargetFinding(manifest, targetName);
@@ -98,6 +114,7 @@ export function renderBench(
     return {
       files,
       rules: { path: "", managed: [], skeleton: "" },
+      settings: undefined,
       findings: [missing],
     };
   }
@@ -184,7 +201,11 @@ export function renderBench(
   for (const section of sections) {
     const body = bodies.get(section.body);
     if (body === undefined) continue;
-    const content = fill(body, section.body).trimEnd();
+    const supplied = section.owner === "repo" ? sectionBodies.get(section.section) : undefined;
+    const content = fill(
+      supplied === undefined ? body : underHeading(body, supplied),
+      section.body,
+    ).trimEnd();
     if (section.owner === "kit") {
       const id = `rules:${section.section}`;
       managed.push({ id, content });
@@ -200,5 +221,9 @@ export function renderBench(
     skeleton: skeletonParts.length > 0 ? `${skeletonParts.join("\n\n")}\n` : "",
   };
 
-  return { files, rules, findings };
+  const settingsBody = bodies.get(target.settingsBody);
+  const settings =
+    settingsBody === undefined ? undefined : { path: target.settings, content: settingsBody };
+
+  return { files, rules, settings, findings };
 }

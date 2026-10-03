@@ -4,19 +4,29 @@ One evening's work, from a brief to a reviewed change. Do the steps in order.
 
 ## 1 · Place the slice
 
-Read `docs/STATE.md` and the plan section for this slice. If the slice still has an open question for the founder, **stop**: it belongs on the milestone's decision page, not in this slice.
+Read `docs/STATE.md` and the plan section for this slice. If the slice still has an open question for the founder, **stop**: it belongs on the milestone's kickoff page, not in this slice.
 
 Branch in the main checkout if you are working alone, otherwise run `/worktree`.
 
 ## 2 · Make the slice folder
 
+The slice folder is `<main checkout>/.mktrue/slices/<slice-id>`. The main checkout is the directory that holds the repository's `.git` directory, so every worktree shares the folder. Find it:
+
 ```
-SLICE="$(git rev-parse --path-format=absolute --git-common-dir)/slices/<slice-id>" && mkdir -p "$SLICE"
+git rev-parse --path-format=absolute --git-common-dir
 ```
 
-It lives inside `.git`: shared by every worktree, never committed, never scanned by the prose budgets.
+That prints `<main checkout>/.git`. Drop the trailing `.git`, write the slice folder out as an absolute path, and make it with that path typed in full:
 
-## 3 · Write `$SLICE/brief.md`
+```
+mkdir -p <main checkout>/.mktrue/slices/<slice-id>
+```
+
+If the printed path does not end in `/.git` (a submodule or a bare layout), keep the slice folder at `<working tree root>/.mktrue/slices/<slice-id>/` instead; `mktrue audit` then attributes by the old rule only.
+
+Every later step and every agent prompt uses that absolute path, never a shell variable. The folder is never committed and never scanned by the prose budgets: `.gitignore` must hold the line `.mktrue/`. Add it if the repository lacks it.
+
+## 3 · Write `<slice folder>/brief.md`
 
 Fixed sections: **Rulings · Shape · Must hold · Tests and plants · Audit · Reports**.
 
@@ -30,13 +40,13 @@ The security auditor runs when the slice touches any of: __MKTRUE_AUDIT_TRIGGERS
 
 `implementer` or `ui-engineer` → `security-auditor` **if triggered** → `reviewer`.
 
-Each reads the earlier reports in `$SLICE`, **never a summary you paste**. The auditor and the reviewer never run at once.
+Each agent returns its report as its final message and writes no report file. **Save that message verbatim** to `<slice folder>/<role>.md` before you spawn the next agent. Each agent reads the earlier saved reports, **never a summary you paste**. The auditor and the reviewer never run at once.
 
 **Never send a follow-up to a finished agent; it replays its whole transcript.**
 
 ## 6 · Follow-ups are new agents
 
-Append a `## Follow-up <n>` section to the brief with the earlier report paths, and spawn a fresh agent against it.
+Append a `## Follow-up <n>` section to the brief with the saved report paths, and spawn a fresh agent against it.
 
 ## 7 · On an `approve` verdict
 
@@ -44,4 +54,4 @@ Run `/close-slice`.
 
 ## Done when
 
-The brief has a report beside it for every agent that ran, the reviewer found no surviving plants, and the change is ready to close.
+The brief has a saved report beside it for every agent that ran, the reviewer found no surviving plants, and the change is ready to close.

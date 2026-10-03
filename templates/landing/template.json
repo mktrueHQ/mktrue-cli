@@ -28,6 +28,11 @@
       "from": "answers.owner",
       "required": true,
       "kind": "text"
+    },
+    "PURPOSE": {
+      "from": "answers.purpose",
+      "required": true,
+      "kind": "text"
     }
   },
   "files": [
@@ -39,6 +44,15 @@
     },
     {
       "path": ".gitignore"
+    },
+    {
+      "path": ".prettierignore"
+    },
+    {
+      "path": ".prettierrc.json"
+    },
+    {
+      "path": "README.md"
     },
     {
       "path": "apps/web/app/[locale]/layout.tsx"
@@ -129,13 +143,25 @@
       "path": "apps/web/proxy.ts"
     },
     {
+      "path": "apps/web/test/app/api/access-request-off.test.ts"
+    },
+    {
+      "path": "apps/web/test/app/request-access-links.test.tsx"
+    },
+    {
       "path": "apps/web/test/config.test.ts"
+    },
+    {
+      "path": "apps/web/test/env-example.test.ts"
     },
     {
       "path": "apps/web/test/lib/access-request.test.ts"
     },
     {
       "path": "apps/web/test/messages.test.ts"
+    },
+    {
+      "path": "apps/web/test/next-config.test.ts"
     },
     {
       "path": "apps/web/test/test-support/server-only.ts"
@@ -145,6 +171,9 @@
     },
     {
       "path": "apps/web/vitest.config.ts"
+    },
+    {
+      "path": "eslint.config.mjs"
     },
     {
       "path": "package.json"
@@ -292,7 +321,17 @@
       "path": "turbo.json"
     }
   ],
-  "gates": ["pnpm install --frozen-lockfile", "pnpm typecheck", "pnpm test"],
+  "rules": {
+    "2": "rules/02-stack-and-versions.md",
+    "10": "rules/10-where-things-live.md"
+  },
+  "gates": [
+    "pnpm install --frozen-lockfile",
+    "pnpm typecheck",
+    "pnpm test",
+    "pnpm lint",
+    "pnpm format:check"
+  ],
   "transforms": [
     {
       "find": " (D-\\d{3})",
@@ -300,7 +339,7 @@
       "lossy": true
     }
   ],
-  "tokenise": ["NAME", "NAME_UPPER", "OWNER", "TITLE", "LOCALES"],
+  "tokenise": ["NAME", "NAME_UPPER", "OWNER", "TITLE", "LOCALES", "PURPOSE"],
   "imported": {
     ".env.example": "sha256-b11aad2e0b15ad0c8ac8297bba9fcf251d9a7710fddba8e766feeebb743d414d",
     ".github/workflows/ci.yml": "sha256-c499ee89461dcb777e55cc93597cd875309df4a746485430619680994de363fe",

@@ -1,6 +1,6 @@
 ---
 name: mktrue
-description: Turn one sentence describing a product idea into a repository mktrue can build without drifting. Use when the founder wants to start a new product, app, or api-service, or asks to "make it true".
+description: Turn one sentence describing a product idea into a repository mktrue can build without drifting. Use when the founder wants to start a new product, API service, landing page or shared infrastructure, or asks to "make it true".
 ---
 
 # mktrue
@@ -14,13 +14,17 @@ runs the same command a person would type. It never renders anything itself.
 1. **Find the CLI.** Run `mktrue --help`. If it fails, stop and print:
 
    ```
-   ln -s <kit>/packages/cli/dist/mktrue.js ~/.local/bin/mktrue
+   npm i -g mktrue
    mktrue doctor --write
    ```
 
 2. **Read the sentence.** From what the founder wrote, propose:
-   - the template: `application` unless the sentence describes an API with
-     no interface of its own, in which case `api-service`
+   - the template, one of four. `application`: a product people use
+     through a web interface, with its API. `api-service`: an API with no
+     interface of its own. `landing`: a public page that presents a
+     product and takes access requests. `infrastructure`: the database and
+     private network that products share, not a product itself. When the
+     sentence fits none of the last three, `application`
    - a name matching `^[a-z][a-z0-9-]*$`
    - the purpose and the data classes it holds
 
@@ -48,6 +52,8 @@ runs the same command a person would type. It never renders anything itself.
    each hyphen-separated word capitalised (`strafe-landing` ->
    `Strafe Landing`); `infrastructure` asks `consumers` instead of either
    port, the products this instance serves as comma-separated slugs.
+   Neither `landing` nor `infrastructure` has a sign-in: `auth` is not
+   asked there, and is written as `none`.
    `siblings` and `skills` are always `[]`. A blank `dataClasses` reply
    means none, so `[]` is a valid answer there. The founder confirms every
    answer in this one round, not turn by turn.
@@ -76,11 +82,11 @@ runs the same command a person would type. It never renders anything itself.
    mktrue new <template> <name> --answers <file>
    ```
 
-   `<template>` is one of the two literals `application` or `api-service`,
-   never built from the sentence. Use the name only after it matches the
-   pattern above, and pass it quoted. No answer text, and no part of the
-   sentence, ever reaches the shell: every answer goes through the file the
-   CLI reads.
+   `<template>` is one of the four literals `application`, `api-service`,
+   `landing` or `infrastructure`, never built from the sentence. Use the
+   name only after it matches the pattern above, and pass it quoted. No
+   answer text, and no part of the sentence, ever reaches the shell: every
+   answer goes through the file the CLI reads.
 
 6. **Relay** the CLI's own lines and exit code, unchanged. On exit 2, fix
    the one answer it named and run again. On exit 3 or exit 4, stop and

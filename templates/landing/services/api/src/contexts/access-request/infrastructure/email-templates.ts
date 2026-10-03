@@ -16,6 +16,7 @@ function escapeHtml(value: string): string {
  * with no shared layout do not earn a package or the two dependencies it would add, and CLAUDE.md
  * §4.8 wants __MKTRUE_OWNER__'s yes before a dependency lands. If a third email ever appears, extract then.
  */
+// prettier-ignore
 const TITLE = "__MKTRUE_TITLE__";
 
 export function verificationCodeEmail(code: string): {

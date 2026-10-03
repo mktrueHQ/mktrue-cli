@@ -15,6 +15,8 @@ export type OpenRepository = (root: string) => Promise<ReadOnlyFileSystem>;
 export type OpenBench = (dir: string | undefined) => FileSystem | undefined;
 
 export interface Output {
+  /** The width a line is clipped to; 80 when the output names none. */
+  readonly columns?: number;
   line(text: string): void;
   finding(finding: Finding): void;
   verdict(text: string): void;

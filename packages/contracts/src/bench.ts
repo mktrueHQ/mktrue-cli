@@ -36,6 +36,7 @@ export const slotSchema = z.object({
   kind: slotKindSchema,
   // docs/architecture.md, "Rendering is deterministic": what this overrides, and why.
   separator: z.string().min(1).max(4).optional(),
+  empty: z.string().min(1).optional(),
 });
 
 export const roleSchema = z.object({
@@ -104,6 +105,7 @@ export const targetSchema = z.object({
   commands: relativePathSchema,
   rules: relativePathSchema,
   settings: relativePathSchema,
+  settingsBody: relativePathSchema,
   roleFrontmatter: z.array(z.string().min(1)).min(1),
   vocabulary: targetVocabularySchema,
 });

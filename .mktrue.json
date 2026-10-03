@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "kit": "0.3.1",
+  "kit": "1.0.0",
   "targets": ["claude-code"],
   "answers": {
     "name": "mktrue",
@@ -23,6 +23,14 @@
     "check --report",
     "config",
     "dependencies"
+  ],
+  "gates": [
+    "pnpm install --frozen-lockfile",
+    "pnpm build",
+    "pnpm check",
+    "pnpm typecheck",
+    "pnpm test",
+    "pnpm format:check"
   ],
   "baseBranch": "main",
   "pins": [],

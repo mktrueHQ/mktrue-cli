@@ -65,6 +65,7 @@ const filesUnder = (dir) =>
 
 const expected = [
   "LICENSE",
+  "README.md",
   "THIRD_PARTY_NOTICES",
   "dist/mktrue.js",
   "package.json",
@@ -118,10 +119,14 @@ if (!values["list-only"]) {
   say("✓ the installed mktrue runs --help");
 
   const repo = join(work, "repo");
-  for (const dir of ["docs/decisions", "docs/design", "docs/log"]) {
+  for (const dir of ["docs/decisions", "docs/design", "docs/log", ".claude"]) {
     mkdirSync(join(repo, dir), { recursive: true });
   }
   writeFileSync(join(repo, ".mktrue.json"), readFileSync(join(ROOT, ".mktrue.json")));
+  writeFileSync(
+    join(repo, ".claude", "settings.json"),
+    readFileSync(join(ROOT, "bench", "settings", "claude-code.json")),
+  );
   for (const [path, text] of [
     ["docs/STATE.md", "# State\n"],
     ["docs/ROADMAP.md", "# Roadmap\n"],

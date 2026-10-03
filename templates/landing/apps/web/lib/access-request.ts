@@ -50,8 +50,7 @@ function reportedClientIp(request: NextRequest): string | undefined {
  * `request.ip` — one tight bucket shared by every visitor. That is the fail-closed direction
  * (CLAUDE.md §4.5), it is the behaviour an empty header already had, and it is reached only when a
  * request did not arrive through Cloudflare. **So the limiter's honesty now rests on the origin
- * being unreachable except through Cloudflare**, which is __MKTRUE_NAME__-infrastructure's to enforce and
- * `docs/deploy.md`'s to record.
+ * being unreachable except through Cloudflare**, which is __MKTRUE_NAME__-infrastructure's to enforce.
  *
  * The API's response is passed through untouched — status and body. Both are already free of the
  * submitted address by construction (`map-error.ts`), so there is nothing here to sanitise, and
@@ -61,6 +60,11 @@ export async function forwardAccessRequest(
   request: NextRequest,
   path: "start" | "verify",
 ): Promise<Response> {
+  // Off unless configured: refuse before the body is read or anything is fetched.
+  if (config.apiBaseUrl === undefined) {
+    return Response.json({ error: "mail_unavailable" }, { status: 503 });
+  }
+
   // Refuse an oversized body here rather than buffering it and letting the API's `bodyLimit` reject
   // it a hop later. It bounds the declared length only: a caller who sends no `content-length`, or
   // chunks the body, is bounded by the API's cap and not by this.

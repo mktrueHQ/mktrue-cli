@@ -17,6 +17,7 @@ import {
 export const AT = new Date("2026-09-09T21:04:00.000Z");
 export const CODE = "040722";
 export const EMAIL = "marta@example.com";
+// prettier-ignore
 export const DESTINATION = "__MKTRUE_OWNER__@example.com";
 
 /** Four units, and a start costs two, so the ceiling is two starts a day. */

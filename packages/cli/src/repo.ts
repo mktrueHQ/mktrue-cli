@@ -8,9 +8,10 @@ import {
 } from "@mktrue/contracts";
 import { EXIT, type Document, type Finding, type TemplateSource } from "@mktrue/core";
 
+import { PathEscapesRepository } from "./adapters.js";
 import { EMBEDDED_BENCH } from "./bench.embedded.js";
 import type { FileSystem, ReadOnlyFileSystem } from "./ports.js";
-import { COLUMNS, clip, errorCode } from "./report.js";
+import { columns, clip, errorCode, printable } from "./report.js";
 import { EMBEDDED_TEMPLATES } from "./templates.embedded.js";
 
 export interface Repo {
@@ -22,17 +23,36 @@ export interface Repo {
   readonly templateSources: readonly TemplateSource[];
   readonly documents: readonly Document[];
   readonly owned: ReadonlyMap<string, string>;
+  readonly settings: ReadonlyMap<string, string>;
+  readonly settingsLinkedOutside: ReadonlySet<string>;
   readonly pathMatches: ReadonlyMap<string, number>;
   readonly findings: readonly Finding[];
 }
 
 const parseFailure = (path: string, detail: string): Finding => ({
   gate: "config",
-  what: clip(`${path} did not parse: ${detail}`, COLUMNS - "mktrue: ✗ config · ".length),
+  what: clip(`${path} did not parse: ${detail}`, columns() - "mktrue: ✗ config · ".length),
   why: "every later step reads it, so nothing downstream can be trusted",
   fix: `fix the error named above in ${path}`,
   exit: EXIT.USAGE,
 });
+
+const staleBuild = (build: string, onDisk: string): Finding => ({
+  gate: "config",
+  what: `this build is ${build}, the bench on disk is ${onDisk}`,
+  why: "a stale build cannot parse a newer bench, so every later step would fail on it",
+  fix: "run pnpm build in the kit checkout, then run this again",
+  exit: EXIT.ENVIRONMENT,
+});
+
+function versionOf(manifestText: string | undefined): string | undefined {
+  try {
+    const version = (JSON.parse(manifestText ?? "") as { version?: unknown } | null)?.version;
+    return typeof version === "string" ? printable(version) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 const misnamedTemplate = (directory: string, name: string): Finding => ({
   gate: "templates",
@@ -42,7 +62,10 @@ const misnamedTemplate = (directory: string, name: string): Finding => ({
   exit: EXIT.FINDINGS,
 });
 
-const isBody = (path: string): boolean => path.endsWith(".md") || path.endsWith(".yml");
+const isBody = (path: string): boolean =>
+  path.endsWith(".md") ||
+  path.endsWith(".yml") ||
+  (path.endsWith(".json") && !path.endsWith("bench.json"));
 const CODE_FILE = /\.(ts|tsx|js|mjs|cjs)$/;
 
 async function benchSourceOf(
@@ -96,8 +119,14 @@ export async function loadBenchFrom(benchSource: ReadOnlyFileSystem | undefined)
           }
         }
       } else {
-        for (const issue of parsed.error.issues) {
-          findings.push(parseFailure("bench/bench.json", issue.message));
+        const build = versionOf(EMBEDDED_BENCH["bench.json"]);
+        const onDisk = versionOf(manifestText);
+        if (build !== undefined && onDisk !== undefined && onDisk !== build) {
+          findings.push(staleBuild(build, clip(onDisk, 20)));
+        } else {
+          for (const issue of parsed.error.issues) {
+            findings.push(parseFailure("bench/bench.json", issue.message));
+          }
         }
       }
     } catch (error) {
@@ -137,6 +166,10 @@ export async function loadTemplateSources(
       for (const file of parsed.data.files) {
         const content = await read(`${name}/${file.path}`);
         if (content !== undefined) contents.set(file.path, content);
+      }
+      for (const path of Object.values(parsed.data.rules)) {
+        const content = await read(`${name}/${path}`);
+        if (content !== undefined) contents.set(path, content);
       }
       templates.push({ manifest: parsed.data, contents });
       return parsed.data;
@@ -218,10 +251,29 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
     if (content !== undefined) documents.push({ path, content, kind: "decision" });
   }
 
+  const settings = new Map<string, string>();
+  const settingsLinkedOutside = new Set<string>();
+  for (const target of config?.targets ?? []) {
+    const path = manifest?.targets[target]?.settings;
+    if (path === undefined) continue;
+    try {
+      const content = await fs.read(path);
+      if (content !== undefined) settings.set(path, content);
+    } catch (error) {
+      if (!(error instanceof PathEscapesRepository)) throw error;
+      settingsLinkedOutside.add(path);
+    }
+  }
+
   const owned = new Map<string, string>();
   for (const path of Object.keys(config?.owned ?? {})) {
-    const content = await fs.read(path);
-    if (content !== undefined) owned.set(path, content);
+    try {
+      const content = await fs.read(path);
+      if (content !== undefined) owned.set(path, content);
+    } catch (error) {
+      if (!(error instanceof PathEscapesRepository) || settingsLinkedOutside.size === 0)
+        throw error;
+    }
   }
 
   const pathMatches = new Map<string, number>();
@@ -254,6 +306,8 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
     templateSources,
     documents,
     owned,
+    settings,
+    settingsLinkedOutside,
     pathMatches,
     findings,
   };

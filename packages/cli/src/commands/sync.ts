@@ -1,15 +1,18 @@
 import {
   EXIT,
+  GATES_FIX,
   configAfterBench,
   exitCodeFor,
   planBench,
   renderBenchFor,
+  settingsLinkedOutside,
   type ExitCode,
 } from "@mktrue/core";
 
+import { PathEscapesRepository } from "../adapters.js";
 import type { FileSystem, Output } from "../ports.js";
 import type { Repo } from "../repo.js";
-import { COLUMNS, clip, errorCode, refuse, row } from "../report.js";
+import { columns, clip, errorCode, refuse, row } from "../report.js";
 
 export interface SyncOptions {
   readonly write: boolean;
@@ -52,6 +55,16 @@ export async function runSync(
   }
 
   const config = repo.config;
+  if ((config.gates ?? []).length === 0) {
+    return refuse(
+      out,
+      "sync",
+      "the configuration lists no gates",
+      "close-slice and the agents would be written with nothing after the colon",
+      GATES_FIX,
+      EXIT.FINDINGS,
+    );
+  }
   const rendered = renderBenchFor(
     { manifest: repo.manifest, bodies: repo.bodies },
     config,
@@ -61,6 +74,18 @@ export async function runSync(
   if (rendered.findings.length > 0) {
     for (const finding of rendered.findings) out.finding(finding);
     return exitCodeFor(rendered.findings);
+  }
+
+  const settingsPath = repo.manifest.targets[options.target]?.settings;
+  if (settingsPath !== undefined) {
+    try {
+      await fs.read(settingsPath);
+    } catch (error) {
+      if (!(error instanceof PathEscapesRepository)) throw error;
+      const linked = settingsLinkedOutside(settingsPath);
+      out.finding(linked);
+      return linked.exit;
+    }
   }
 
   const current = new Map<string, string>();
@@ -84,7 +109,7 @@ export async function runSync(
   out.line(
     clip(
       `mktrue: sync · kit ${config.kit} → ${options.kitVersion} · ${options.write ? "writing" : "dry run"}`,
-      COLUMNS,
+      columns(),
     ),
   );
   for (const entry of plan.entries) {
@@ -93,6 +118,13 @@ export async function runSync(
   }
   if (rulesPlan.action !== "unchanged") {
     out.line(row(rulesPlan.action, rulesPlan.path, rulesPlan.reason));
+  }
+  const settings =
+    rendered.settings !== undefined && (await fs.read(rendered.settings.path)) === undefined
+      ? rendered.settings
+      : undefined;
+  if (settings !== undefined) {
+    out.line(row("update", settings.path, "there was none; its rules are yours to add to"));
   }
 
   if (options.write) {
@@ -115,6 +147,7 @@ export async function runSync(
         }
       }
       if (rulesPlan.next !== undefined) await stage(rulesPlan.path, rulesPlan.next);
+      if (settings !== undefined) await stage(settings.path, settings.content);
     } catch (error) {
       for (const item of staged) await fs.remove(item.from);
       return refuse(
@@ -124,7 +157,7 @@ export async function runSync(
         "a write failed before anything moved, so this repository is untouched",
         clip(
           `${errorCode(error)} on a write: make this repository writable, then run sync again`,
-          COLUMNS - "  fix   ".length,
+          columns() - "  fix   ".length,
         ),
         EXIT.FINDINGS,
       );
@@ -142,7 +175,8 @@ export async function runSync(
     await fs.write(".mktrue.json", `${JSON.stringify(updated, null, 2)}\n`);
   }
 
-  const { update, keep, conflict, skip, removed } = plan.counts;
+  const { keep, conflict, skip, removed } = plan.counts;
+  const update = plan.counts.update + (settings === undefined ? 0 : 1);
   const summary = [
     `${update} update${update === 1 ? "" : "s"}`,
     `${keep} kept`,

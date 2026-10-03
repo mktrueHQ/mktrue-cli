@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+// prettier-ignore
 import { LOCALES } from "@__MKTRUE_NAME__/contracts";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
@@ -11,6 +12,7 @@ import { profileIsReadable } from "@/lib/profile";
 
 import "./globals.css";
 
+// prettier-ignore
 export const metadata: Metadata = { title: "__MKTRUE_NAME__" };
 
 export default async function RootLayout({ children }: { readonly children: ReactNode }) {
@@ -23,6 +25,7 @@ export default async function RootLayout({ children }: { readonly children: Reac
       <body className="min-h-dvh bg-white text-neutral-900 antialiased">
         <NextIntlClientProvider locale={locale} messages={{ shell }}>
           <header className="flex items-center justify-between gap-4 border-b border-neutral-200 px-4 py-3">
+            {/* prettier-ignore */}
             <span className="font-semibold">__MKTRUE_NAME__</span>
             {canChooseLocale ? <LanguageChoice locales={LOCALES} /> : null}
           </header>

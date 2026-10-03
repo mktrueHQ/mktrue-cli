@@ -19,6 +19,9 @@ backups/
 # personal claude-code settings stay per-machine
 .claude/settings.local.json
 
+# mktrue slice folders
+.mktrue/
+
 .DS_Store
 .idea/
 .vscode/*

@@ -3,8 +3,9 @@ import { mktrueConfigSchema, type Answers, type MktrueConfig } from "@mktrue/con
 import { renderComposed, type TemplateSource } from "./compose.js";
 import { derivedValues } from "./derived.js";
 import { EXIT, type Finding } from "./findings.js";
+import { NO_SIGN_IN, hasSignIn } from "./questions.js";
 import type { RenderedFile } from "./render.js";
-import { substitute } from "./slots.js";
+import { slotsIn, substitute } from "./slots.js";
 import { configAfterBench, planBench, renderBenchFor, type BenchSource } from "./sync.js";
 
 export const OFFERED_TEMPLATES: readonly string[] = [
@@ -30,7 +31,7 @@ export const DEFAULT_AUDIT_TRIGGERS: readonly string[] = [
 
 export const CONFIG_PATH = ".mktrue.json";
 
-const CREATED_LOG_DOCUMENT = "log-entry";
+const CREATED_LOG_DOCUMENT = "created-log";
 
 export interface NewInput {
   readonly template: string;
@@ -135,8 +136,63 @@ export function pnpmSatisfies(requirement: PnpmRequirement, version: string): bo
   return requirement.orNewer ? found >= requirement.major : found === requirement.major;
 }
 
+/** The rules sections a template writes: its own, else the first base that supplies one. */
+function sectionBodies(
+  overlay: TemplateSource,
+  templates: readonly TemplateSource[],
+): { bodies: Map<number, string>; findings: Finding[] } {
+  const bodies = new Map<number, string>();
+  const findings: Finding[] = [];
+  const bases = overlay.manifest.composes.flatMap((base) =>
+    templates.filter((source) => source.manifest.name === base),
+  );
+  for (const source of [overlay, ...bases]) {
+    for (const [section, path] of Object.entries(source.manifest.rules)) {
+      if (bodies.has(Number(section))) continue;
+      const body = source.contents.get(path);
+      const where = `templates/${source.manifest.name}/${path}`;
+      if (body === undefined || body.trim() === "") {
+        findings.push(
+          finding(
+            `${source.manifest.name} names ${path} for rules section ${section}, and it is empty or missing`,
+            "the section would render as a heading with nothing under it",
+            `write ${where}, or remove it from rules in the manifest`,
+            EXIT.FINDINGS,
+          ),
+        );
+        continue;
+      }
+      if (slotsIn(body).size > 0) {
+        findings.push(
+          finding(
+            `${where} holds a slot`,
+            "a rules body a template supplies is rendered as written, so the slot would ship visible",
+            `write ${where} without __MKTRUE_ slots`,
+            EXIT.FINDINGS,
+          ),
+        );
+        continue;
+      }
+      if (/<!--\s*mktrue:/.test(body) || /^##\s/m.test(body)) {
+        findings.push(
+          finding(
+            `${where} holds a level-two heading or a mktrue region marker`,
+            "it lands inside one section of the rules file, where either would start a section or a region sync then misreads",
+            `write ${where} as the text under its heading: no ## line, no <!-- mktrue: marker`,
+            EXIT.FINDINGS,
+          ),
+        );
+        continue;
+      }
+      bodies.set(Number(section), body);
+    }
+  }
+  return { bodies, findings };
+}
+
 export function planNew(input: NewInput): NewPlan {
-  const { answers, name, template } = input;
+  const { name, template } = input;
+  const answers = hasSignIn(template) ? input.answers : { ...input.answers, auth: NO_SIGN_IN };
 
   if (!OFFERED_TEMPLATES.includes(template)) {
     const [why, fix] = templateNotOfferedFix();
@@ -210,7 +266,16 @@ export function planNew(input: NewInput): NewPlan {
     owned: {},
   });
 
-  const rendered = renderBenchFor(input.bench, config, input.kitVersion, input.target);
+  const sections = sectionBodies(overlay, input.templates);
+  if (sections.findings.length > 0) return refused(sections.findings);
+
+  const rendered = renderBenchFor(
+    input.bench,
+    config,
+    input.kitVersion,
+    input.target,
+    sections.bodies,
+  );
   if (rendered.findings.length > 0) return refused([...rendered.findings]);
 
   const bench = planBench(rendered, config, new Map(), { adopt: true, restore: false });
@@ -222,6 +287,7 @@ export function planNew(input: NewInput): NewPlan {
   if (bench.rules.next !== undefined) {
     benchFiles.push({ path: bench.rules.path, content: bench.rules.next });
   }
+  const settings = rendered.settings === undefined ? [] : [rendered.settings];
   const stamped = configAfterBench(
     config,
     bench,
@@ -229,6 +295,10 @@ export function planNew(input: NewInput): NewPlan {
     input.kitVersion,
   );
 
+  const createdValues = new Map(rendered.values)
+    .set("TEMPLATE", template)
+    .set("TEMPLATE_VERSION", overlay.manifest.version)
+    .set("DATE", input.date);
   const seedFindings: Finding[] = [];
   const seeds: RenderedFile[] = [];
   for (const document of input.bench.manifest.docs) {
@@ -237,7 +307,7 @@ export function planNew(input: NewInput): NewPlan {
     const isDirectory = document.renderTo.endsWith("/");
     if (isDirectory && document.id !== CREATED_LOG_DOCUMENT) continue;
 
-    const filled = substitute(body, rendered.values);
+    const filled = substitute(body, isDirectory ? createdValues : rendered.values);
     for (const slot of filled.missing) {
       seedFindings.push(
         finding(
@@ -250,10 +320,7 @@ export function planNew(input: NewInput): NewPlan {
     }
     seeds.push(
       isDirectory
-        ? {
-            path: `${document.renderTo}${input.date}-created.md`,
-            content: filled.text.replace(/^# .*/, `# ${name} created · ${input.date}`),
-          }
+        ? { path: `${document.renderTo}${input.date}-created.md`, content: filled.text }
         : { path: document.renderTo, content: filled.text },
     );
   }
@@ -264,7 +331,7 @@ export function planNew(input: NewInput): NewPlan {
   const overlaps: Finding[] = [];
   const layered: [string, readonly RenderedFile[]][] = [
     [`the ${template} template`, composed.files],
-    ["the bench", benchFiles],
+    ["the bench", [...benchFiles, ...settings]],
     ["the seed documents", seeds],
     ["the configuration", [configFile]],
   ];
@@ -290,7 +357,10 @@ export function planNew(input: NewInput): NewPlan {
   return {
     files: [
       ...composed.files.map(({ path, content, executable }) => ({ path, content, executable })),
-      ...[...benchFiles, ...seeds, configFile].map((file) => ({ ...file, executable: false })),
+      ...[...benchFiles, ...settings, ...seeds, configFile].map((file) => ({
+        ...file,
+        executable: false,
+      })),
     ],
     config: stamped,
     gates: overlay.manifest.gates,

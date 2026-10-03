@@ -4,6 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { apiGet, apiSend } from "@/lib/api";
 import { config } from "@/lib/config";
 
+// `lib/config` reads the environment once, at import, and a blank API base refuses every call.
+vi.hoisted(() => {
+  process.env.API_BASE_URL = "http://api.test";
+});
+
 const token = vi.hoisted(() => ({ value: "token_from_the_session" as string | null }));
 vi.mock("@/lib/owner-token", () => ({ ownerToken: async () => token.value }));
 

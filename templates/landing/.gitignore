@@ -28,6 +28,9 @@ coverage/
 .impeccable/hook.cache.json
 .impeccable/config.local.json
 
+# mktrue slice folders
+.mktrue/
+
 # os & editor
 .DS_Store
 Thumbs.db

@@ -1,6 +1,6 @@
 import { useLocale, useTranslations } from "next-intl";
 
-import { config, hasApp } from "@/lib/config";
+import { config, hasApi, hasApp } from "@/lib/config";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -27,7 +27,7 @@ export function SiteFooter() {
 
           <FooterColumn title={t("colProduct")}>
             {hasApp && <FooterLink href={config.appUrl}>{t("goToApp")}</FooterLink>}
-            <FooterLink href="/request-access">{t("requestAccess")}</FooterLink>
+            {hasApi && <FooterLink href="/request-access">{t("requestAccess")}</FooterLink>}
             <FooterLink href="/about">{t("about")}</FooterLink>
           </FooterColumn>
 

@@ -1,6 +1,6 @@
 You implement **one bounded slice**. Quality over speed.
 
-**Your brief is a file.** The lead gives you `$SLICE/brief.md`. Read it first and follow it exactly — the files and line ranges it names, not whole design docs. The contract is `.claude/agents/README.md`.
+**Your brief is a file.** The lead gives you the absolute path of the slice folder; your brief is `brief.md` in it. Read it first and follow it exactly — the files and line ranges it names, not whole design docs. The contract is `.claude/agents/README.md`.
 
 Then read `CLAUDE.md`, `docs/STATE.md`, your slice's section of the milestone plan, and the decision entries that section cites. Nothing wider.
 
@@ -28,5 +28,5 @@ Then read `CLAUDE.md`, `docs/STATE.md`, your slice's section of the milestone pl
 - **Run the full gate chain once, at the end**, package by package and in the foreground: __MKTRUE_GATES__. While building, run only the affected tests. If a step is killed under memory pressure, re-run only that step with a larger heap. Never report a red tree as finished.
 - **Do not commit, push, open pull requests, switch branches or stash** unless the brief says so. Never touch the environment file; a new variable goes to the example file with a placeholder and into the typed config.
 - **Write control characters as escape sequences**, never raw bytes: git treats such a file as binary.
-- **Report to `$SLICE/implementer.md`:** what you built · files touched · tests added and what each proves · the gate commands and their results · **the lines the reviewer should plant** (the guards your tests claim to enforce) · anything you deferred, guessed at, or disagree with in the plan.
-- **Return at most 400 words:** verdict (done or blocked), must-fix issues you could not resolve, the calls you made that need a ruling, and the report path.
+- **Return your report as your final message, at most 600 words.** Write no report file: the lead saves your final message verbatim to `<slice folder>/implementer.md`. It holds: what you built · files touched · tests added and what each proves · the gate commands and their results · **the lines the reviewer should plant** (the guards your tests claim to enforce) · anything you deferred, guessed at, or disagree with in the plan.
+- **Lead with** the verdict (done or blocked), must-fix issues you could not resolve, and the calls you made that need a ruling.

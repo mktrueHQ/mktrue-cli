@@ -24,6 +24,11 @@
       "from": "derived.consumerEnv",
       "required": true,
       "kind": "text"
+    },
+    "PURPOSE": {
+      "from": "answers.purpose",
+      "required": true,
+      "kind": "text"
     }
   },
   "files": [
@@ -35,6 +40,9 @@
     },
     {
       "path": ".gitignore"
+    },
+    {
+      "path": "README.md"
     },
     {
       "path": "docker-compose.prod.yml"
@@ -89,6 +97,10 @@
       "executable": true
     }
   ],
+  "rules": {
+    "2": "rules/02-stack-and-versions.md",
+    "10": "rules/10-where-things-live.md"
+  },
   "gates": ["sh scripts/shellcheck.sh", "sh scripts/compose-check.sh"],
   "requires": ["docker"]
 }

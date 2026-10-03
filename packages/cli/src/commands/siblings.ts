@@ -16,7 +16,7 @@ import {
 import { BlobTooLarge, GitRefused, MAX_BLOB_BYTES } from "../git.js";
 import type { FileSystem, LocatedSibling, Output, SiblingPorts } from "../ports.js";
 import type { Repo } from "../repo.js";
-import { COLUMNS, clip, errorCode, printable, refuse } from "../report.js";
+import { columns, clip, errorCode, printable, refuse } from "../report.js";
 import { printGates, printVerdict, runGates } from "./check.js";
 
 export interface SiblingsOptions {
@@ -143,12 +143,12 @@ async function locateAndRead(
 }
 
 const stateLine = (label: string, where: string, kit: string): string =>
-  clip(`mktrue: ${label} · ${printable(where)} · kit ${printable(kit)}`, COLUMNS);
+  clip(`mktrue: ${label} · ${printable(where)} · kit ${printable(kit)}`, columns());
 
 const countsLine = (label: string, state: RepositoryState): string =>
   clip(
     `mktrue: ${label} · ${Object.keys(state.owned).length} owned · ${state.edited} edited · ${state.pins.length} pinned · ${state.plan.length} behind`,
-    COLUMNS,
+    columns(),
   );
 
 export async function runCheckSiblings(
@@ -237,7 +237,7 @@ export async function runCheckSiblings(
   for (const sibling of siblings) {
     const label = `sibling ${printable(shownSibling(sibling.entry, sibling.path))}`;
     if (!sibling.readable) {
-      out.line(clip(`mktrue: ${label} · unreadable · ${printable(sibling.why)}`, COLUMNS));
+      out.line(clip(`mktrue: ${label} · unreadable · ${printable(sibling.why)}`, columns()));
       continue;
     }
     out.line(stateLine(label, `${sibling.ref} ${sibling.commit}`, sibling.state.kit));
@@ -245,9 +245,9 @@ export async function runCheckSiblings(
   }
   for (const finding of comparison.findings) {
     const head = finding.exit === EXIT.TRUE ? "mktrue: note · " : `mktrue: ✗ ${finding.gate} · `;
-    out.line(`${head}${clip(printable(finding.what), COLUMNS - head.length)}`);
+    out.line(`${head}${clip(printable(finding.what), columns() - head.length)}`);
     out.line(`  why   ${printable(finding.why)}`);
-    out.line(`  fix   ${clip(printable(finding.fix), COLUMNS - "  fix   ".length)}`);
+    out.line(`  fix   ${clip(printable(finding.fix), columns() - "  fix   ".length)}`);
   }
   return printVerdict(counted.length, exit, out);
 }

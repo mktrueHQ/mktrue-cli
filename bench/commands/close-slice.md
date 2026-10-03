@@ -1,6 +1,6 @@
 # Close a slice
 
-Gates, merge, state replaced. **Do the steps in order; do not skip one because it obviously passed.**
+Gates, merge, the merge confirmed, state replaced. **Do the steps in order; do not skip one because it obviously passed.**
 
 ## 1 · The tree is yours and clean of plants
 
@@ -14,7 +14,7 @@ A red count **or a skipped count** is a stop, not a caveat: re-run that suite al
 
 ## 3 · The canonical record
 
-Write `$SLICE/record.md`: what landed · the rulings made · the audit verdict, or "not triggered, because …" · the plant table · the close-run numbers · what is owed to the founder.
+Write `<slice folder>/record.md`, from the reports you saved there: what landed · the rulings made · the audit verdict, or "not triggered, because …" · the plant table · the close-run numbers · what is owed to the founder.
 
 The pull request body, the board entry and the log entry are all derived from this file, never written separately.
 
@@ -22,14 +22,22 @@ The pull request body, the board entry and the log entry are all derived from th
 
 Open it against __MKTRUE_BASE_BRANCH__, passing long text with `--body-file` rather than inline. Check CI with a **short poll** whose exit code you inspect — never a long-lived background watcher, and never piped into a merge chain. No verdict, no merge.
 
+Merge, then **read the result before anything else**:
+
+```
+gh pr view <number> --json state --jq .state
+```
+
+It must print `MERGED`. Anything else — `OPEN`, `CLOSED`, an error — means the merge was refused: **stop the close here, with the branch and the worktree intact**, and fix what refused it.
+
 ## 5 · Replace `docs/STATE.md`
 
 From the record, not from memory. **Replaced, never appended.** Under __MKTRUE_BUDGET_STATE__ characters. A settled decision's own file and its index line exist before this step.
 
 ## 6 · Leave the tree
 
-Delete the branch, remove the worktree, keep `$SLICE` until the milestone closes. Then clear the session: the next slice starts from `docs/STATE.md`.
+Only after step 4 printed `MERGED`: delete the branch, remove the worktree, keep the slice folder until the milestone closes. Then clear the session: the next slice starts from `docs/STATE.md`.
 
 ## Done when
 
-Gates green, `mktrue check` exit 0, merged, state replaced, worktree gone.
+Gates green, `mktrue check` exit 0, the pull request's state read as `MERGED`, state replaced, worktree gone.

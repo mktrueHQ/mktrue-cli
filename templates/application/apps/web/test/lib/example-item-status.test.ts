@@ -9,9 +9,9 @@ import { describe, expect, it } from "vitest";
 import { statusKey } from "@/lib/example-item-status";
 
 const WEB = join(import.meta.dirname, "..", "..");
-const CONTRACTS = realpathSync(
-  dirname(createRequire(join(WEB, "package.json")).resolve("@__MKTRUE_NAME__/contracts")),
-);
+const requireFromWeb = createRequire(join(WEB, "package.json"));
+// prettier-ignore
+const CONTRACTS = realpathSync(dirname(requireFromWeb.resolve("@__MKTRUE_NAME__/contracts")));
 const STATUSES = join(CONTRACTS, "example-item.ts");
 const ERROR_CODES = join(CONTRACTS, "api-error.ts");
 

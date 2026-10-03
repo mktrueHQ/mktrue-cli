@@ -49,6 +49,11 @@ async function send<T>(
   const { method, path, body, expect, signal } = request;
   const where = `${method} ${path.split("?")[0]}`;
 
+  if (config.apiBaseUrl === undefined) {
+    console.error(`api: ${where} refused, API_BASE_URL is not set`);
+    return { status: "unavailable", reason: "api" };
+  }
+
   const token = await ownerToken();
   if (token === null) return { status: "unauthenticated" };
 

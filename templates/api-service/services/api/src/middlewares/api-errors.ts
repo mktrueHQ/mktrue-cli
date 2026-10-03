@@ -1,3 +1,4 @@
+// prettier-ignore
 import type { ApiError, ApiErrorCode } from "@__MKTRUE_NAME__/contracts";
 import type { FastifyError, FastifyInstance, FastifyReply } from "fastify";
 

@@ -1,3 +1,4 @@
+// prettier-ignore
 import { LOCALES, localeSchema, type Locale } from "@__MKTRUE_NAME__/contracts";
 
 export const DEFAULT_LOCALE: Locale = LOCALES[0];

@@ -5,6 +5,24 @@ import type { Output } from "./ports.js";
 
 export const COLUMNS = 80;
 
+const NARROWEST = 40;
+
+let width: number = COLUMNS;
+
+/** A terminal's own column count; 80 for a pipe, or for a count that is not a whole number of 40 or more. */
+export function terminalColumns(isTerminal: boolean, reported: unknown): number {
+  if (!isTerminal || typeof reported !== "number") return COLUMNS;
+  return Number.isInteger(reported) && reported >= NARROWEST ? reported : COLUMNS;
+}
+
+export function setColumns(reported: number | undefined): void {
+  width = terminalColumns(reported !== undefined, reported);
+}
+
+export function columns(): number {
+  return width;
+}
+
 const CONTROL_OR_INVISIBLE = new RegExp(`[${CONTROL_OR_INVISIBLE_CLASS}]`, "gu");
 
 export function printable(text: string): string {
@@ -70,7 +88,7 @@ const ACTION_WIDTH = 10;
 export function row(action: string, path: string, reason: string): string {
   const shown = path.length > PATH_WIDTH ? `…${path.slice(path.length - PATH_WIDTH + 1)}` : path;
   const head = `  ${action.padEnd(ACTION_WIDTH)}${shown.padEnd(PATH_WIDTH)} `;
-  return `${head}${clip(reason, COLUMNS - head.length)}`;
+  return `${head}${clip(reason, columns() - head.length)}`;
 }
 
 export function refuse(

@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 
-import { config, hasApp } from "@/lib/config";
+import { config, hasApi, hasApp } from "@/lib/config";
 import { Link } from "@/i18n/navigation";
 
 import { Container } from "./container";
@@ -52,7 +52,7 @@ export function SiteHeader({
               </Cta>
             </span>
           )}
-          {!hideRequestAccess && (
+          {hasApi && !hideRequestAccess && (
             <Cta href="/request-access" variant="solid">
               {t("requestAccess")}
             </Cta>

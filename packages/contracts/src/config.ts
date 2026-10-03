@@ -124,6 +124,15 @@ export const ownedSchema = z.record(
   z.string().regex(/^sha256-[0-9a-f]{64}$/, "expected sha256-<64 hex characters>"),
 );
 
+export const gateSchema = z
+  .string()
+  .trim()
+  .min(1, "a blank gate is no gate: write the command, or remove the entry")
+  .refine(
+    (gate) => !/[\r\n]/.test(gate),
+    "a gate is one line: split it into one entry per command",
+  );
+
 export const mktrueConfigSchema = z.object({
   schema: z.literal(1),
   kit: z.string().min(1),
@@ -137,7 +146,7 @@ export const mktrueConfigSchema = z.object({
   answers: answersSchema,
   budgets: budgetsSchema,
   auditTriggers: z.array(z.string().min(1)),
-  gates: z.array(z.string().min(1)).optional(),
+  gates: z.array(gateSchema).optional(),
   baseBranch: z.string().min(1),
   paths: z
     .object({

@@ -114,12 +114,22 @@ function consumersQuestion(name: string | undefined): Question {
   };
 }
 
+const WITHOUT_SIGN_IN: readonly string[] = ["landing", "infrastructure"];
+
+export const NO_SIGN_IN = "none";
+
+export function hasSignIn(template: string): boolean {
+  return !WITHOUT_SIGN_IN.includes(template);
+}
+
+const UNSIGNED_QUESTIONS = BASE_QUESTIONS.filter((question) => question.key !== "auth");
+
 export function questionsFor(template: string, name?: string): readonly Question[] {
   if (template === "application")
     return [...BASE_QUESTIONS, PORT_QUESTIONS.web, PORT_QUESTIONS.api];
   if (template === "api-service") return [...BASE_QUESTIONS, PORT_QUESTIONS.api];
-  if (template === "landing") return [...BASE_QUESTIONS, titleQuestion(name)];
-  if (template === "infrastructure") return [...BASE_QUESTIONS, consumersQuestion(name)];
+  if (template === "landing") return [...UNSIGNED_QUESTIONS, titleQuestion(name)];
+  if (template === "infrastructure") return [...UNSIGNED_QUESTIONS, consumersQuestion(name)];
   return [];
 }
 
@@ -181,7 +191,7 @@ export function answersFromReplies(
     audienceTest: reply("audienceTest").trim(),
     stakes: reply("stakes").trim(),
     dataClasses: parseList(reply("dataClasses")),
-    auth: reply("auth").trim(),
+    auth: hasSignIn(template) ? reply("auth").trim() : NO_SIGN_IN,
     ports,
     languages: parseList(reply("languages")),
     siblings: [],

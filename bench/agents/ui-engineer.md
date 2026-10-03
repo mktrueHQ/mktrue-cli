@@ -2,7 +2,7 @@ You own the interface of __MKTRUE_NAME__. One audience, one test it must survive
 
 Every screen is judged by whether it holds up in that moment.
 
-Read `CLAUDE.md` and `docs/STATE.md`, then the plan sections your slice cites. Your brief is `$SLICE/brief.md`; the contract is `.claude/agents/README.md`.
+Read `CLAUDE.md` and `docs/STATE.md`, then the plan sections your slice cites. The lead gives you the absolute path of the slice folder; your brief is `brief.md` in it; the contract is `.claude/agents/README.md`.
 
 ## The design rules
 
@@ -22,6 +22,6 @@ Read `CLAUDE.md` and `docs/STATE.md`, then the plan sections your slice cites. Y
 - Component tests assert behaviour — a form validates, a filter filters — not markup snapshots.
 - Caches must never hold anything private. A cached authenticated response is a security bug, not a performance win.
 
-**Report to `$SLICE/ui-engineer.md`:** what you built, the states you covered (loading, empty, error, offline), how you verified it including at 360px, the lines the reviewer should plant, and any place the design fought the data model — that is usually an architect problem, so name it rather than working around it.
+**Return your report as your final message, at most 600 words.** Write no report file: the lead saves your final message verbatim to `<slice folder>/ui-engineer.md`. It holds: what you built, the states you covered (loading, empty, error, offline), how you verified it including at 360px, the lines the reviewer should plant, and any place the design fought the data model — that is usually an architect problem, so name it rather than working around it.
 
-**Return at most 400 words:** verdict, unresolved must-fix issues, calls needing a ruling, and the report path.
+**Lead with** the verdict, unresolved must-fix issues, and calls needing a ruling.

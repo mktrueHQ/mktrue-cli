@@ -149,6 +149,7 @@ export interface BenchSource {
 export interface BenchRender {
   readonly files: readonly RenderedFile[];
   readonly rules: RenderedRules;
+  readonly settings: RenderedFile | undefined;
   readonly values: ReadonlyMap<string, string>;
   readonly findings: readonly Finding[];
 }
@@ -158,6 +159,7 @@ export function renderBenchFor(
   config: MktrueConfig,
   kitVersion: string,
   target: string,
+  sectionBodies?: ReadonlyMap<number, string>,
 ): BenchRender {
   const values = slotValues(bench.manifest, {
     answers: config.answers,
@@ -169,7 +171,7 @@ export function renderBenchFor(
     },
     derived: { gates: config.gates ?? [], kitVersion },
   });
-  return { ...renderBench(bench.manifest, bench.bodies, values, target), values };
+  return { ...renderBench(bench.manifest, bench.bodies, values, target, sectionBodies), values };
 }
 
 export interface BenchPlan {

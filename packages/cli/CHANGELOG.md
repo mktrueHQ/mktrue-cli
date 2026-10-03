@@ -1,5 +1,15 @@
 # mktrue
 
+## 1.0.0
+
+### Major Changes
+
+- 980e3b2: A product made by 1.0.0 starts true on its first day. `mktrue new` now writes `.claude/settings.json` with deny rules for secret files, force-pushes and hard resets, and `mktrue check` reports when one goes missing; `CLAUDE.md` arrives with its stack and its file map already written from the template, and never says "holds: ." when a product holds nothing sensitive; the created log records the template, the kit version, your answers and the gates. The web templates refuse instead of falling back: a blank `API_BASE_URL` no longer means localhost, and both send HSTS and no `X-Powered-By`. `pnpm format:check` and `pnpm lint` work as written and are gates, whatever the product is called; landing offers no link to a request page that is off, a fresh application's `.env.example` points the web at its API, the landing `.env.example` names only what the code reads, and every product gets a README about itself. In a repository you already have, run `mktrue sync --write`: it writes the settings file if you have none, and if you keep your own, `check` names the deny rule to add. A `.mktrue.json` with no `gates` is now a finding, and `sync` refuses until you list them.
+
+### Minor Changes
+
+- ae84085: The slice loop runs in today's Claude Code. The slice folder moves out of `.git` to `.mktrue/slices/<slice-id>/` in the main checkout, and no bench instruction needs a compound command. Agents return their reports as text, at most 600 words, and the lead saves them. The kickoff page lives in `docs/design/`, outside the decision budget. Plants stay in scratch space, never the real home or `/tmp`. `/close-slice` reads the pull request as `MERGED` before any cleanup. `mktrue audit` attributes subagents from the new folder and still reads the old one, and a kit-checkout build that is older than its bench says so instead of reporting a parse error. After `mktrue sync --write`, add `.mktrue/` to `.gitignore` if it is not there.
+
 ## 0.3.1
 
 ### Patch Changes

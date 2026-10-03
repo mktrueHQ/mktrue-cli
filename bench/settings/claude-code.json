@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(!.env.example)",
+      "Read(!.env.sample)",
+      "Read(!.env.template)",
+      "Read(*.pem)",
+      "Read(*.key)",
+      "Read(*.p12)",
+      "Read(id_rsa)",
+      "Read(id_ecdsa)",
+      "Read(id_ed25519)",
+      "Bash(source .env)",
+      "Bash(source *.env)",
+      "Bash(source *.env.local)",
+      "Bash(source *.env.production)",
+      "Bash(. .env)",
+      "Bash(. *.env)",
+      "Bash(. *.env.local)",
+      "Bash(. *.env.production)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push * +*)",
+      "Bash(git push --mirror*)",
+      "Bash(git push * --mirror*)",
+      "Bash(git push --delete*)",
+      "Bash(git push * --delete*)",
+      "Bash(git reset --hard*)",
+      "Bash(git filter-branch*)",
+      "Bash(git filter-repo*)"
+    ]
+  }
+}

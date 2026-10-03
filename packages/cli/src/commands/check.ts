@@ -9,7 +9,9 @@ import {
   checkDocumentPaths,
   checkDrift,
   checkFreeTextTokenPositions,
+  checkGates,
   checkGeneratedLockfiles,
+  checkSettings,
   checkTemplateSlots,
   checkTiers,
   exitCodeFor,
@@ -19,7 +21,7 @@ import {
 
 import type { Output } from "../ports.js";
 import type { Repo } from "../repo.js";
-import { COLUMNS, clip } from "../report.js";
+import { columns, clip } from "../report.js";
 
 const number = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
@@ -48,7 +50,7 @@ export function runGates(repo: Repo, kitVersion: string): GateRun {
     if (findings.length === before) gatesPassed += 1;
     const told = facts(result);
     for (const fact of typeof told === "string" ? [told] : told) {
-      lines.push(clip(`mktrue: ${label} · ${fact}`, COLUMNS));
+      lines.push(clip(`mktrue: ${label} · ${fact}`, columns()));
     }
   };
 
@@ -124,6 +126,26 @@ export function runGates(repo: Repo, kitVersion: string): GateRun {
       () => checkDocumentPaths(config.paths, repo.pathMatches),
       (r) => `${r.resolved} of ${r.total} resolve`,
     );
+    gate(
+      "gates",
+      () => checkGates(config.gates),
+      (r) => `${r.gates} listed`,
+    );
+    for (const name of config.targets) {
+      const target = repo.manifest?.targets[name];
+      if (target === undefined) continue;
+      gate(
+        "settings",
+        () =>
+          checkSettings({
+            path: target.settings,
+            kit: repo.bodies.get(target.settingsBody),
+            current: repo.settings.get(target.settings),
+            linkedOutside: repo.settingsLinkedOutside.has(target.settings),
+          }),
+        (r) => `${r.present} of ${r.rules} deny rules`,
+      );
+    }
     gate(
       "drift",
       () =>

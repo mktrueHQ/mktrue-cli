@@ -1,7 +1,5 @@
-import {
-  verifyAccessRequestBodySchema,
-  type VerifyAccessRequestResponse,
-} from "@__MKTRUE_NAME__/contracts";
+// prettier-ignore
+import { verifyAccessRequestBodySchema, type VerifyAccessRequestResponse } from "@__MKTRUE_NAME__/contracts";
 import type { FastifyInstance } from "fastify";
 
 import { verifyAccessRequest } from "../../contexts/access-request/application/verify-access-request";

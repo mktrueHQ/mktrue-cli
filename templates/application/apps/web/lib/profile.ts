@@ -1,5 +1,6 @@
 import "server-only";
 
+// prettier-ignore
 import { profileDtoSchema, type Locale, type ProfileDto } from "@__MKTRUE_NAME__/contracts";
 import { cache } from "react";
 

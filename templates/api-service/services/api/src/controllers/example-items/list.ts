@@ -1,3 +1,4 @@
+// prettier-ignore
 import { listExampleItemsQuerySchema, type ExampleItemDto } from "@__MKTRUE_NAME__/contracts";
 import type { FastifyInstance } from "fastify";
 

@@ -4,6 +4,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { forwardAccessRequest } from "@/lib/access-request";
 
+// `lib/config` reads the environment once, at import, and a blank API base refuses every call.
+vi.hoisted(() => {
+  process.env.API_BASE_URL = "http://localhost:4201";
+});
+
 /**
  * The proxy is where the rate limiter's key is chosen, and it had never had a test.
  *

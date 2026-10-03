@@ -16,13 +16,16 @@ const SECURITY_HEADERS = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ] as const;
 
 const baseConfig: NextConfig = {
+  // prettier-ignore
   transpilePackages: ["@__MKTRUE_NAME__/contracts"],
   output: "standalone",
   outputFileTracingRoot: resolve(import.meta.dirname, "../.."),
   agentRules: false,
+  poweredByHeader: false,
   headers: async () => [{ source: "/:path*", headers: [...SECURITY_HEADERS] }],
 };
 

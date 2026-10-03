@@ -145,6 +145,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     isProduction,
     isTest: env.NODE_ENV === "test",
     mongoUri: blankToUndefined(env.MONGO_URI),
+    // prettier-ignore
     mongoDbName: blankToUndefined(env.MONGO_DB_NAME) ?? "__MKTRUE_NAME__",
     resendApiKey: blankToUndefined(env.RESEND_API_KEY),
     mailFrom: blankToUndefined(env.MAIL_FROM),

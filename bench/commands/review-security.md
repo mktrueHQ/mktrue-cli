@@ -3,7 +3,7 @@
 ## Steps
 
 1. **Establish the scope.** By default: the branch diff against its base, plus anything uncommitted. Say which it is.
-2. **Delegate to the `security-auditor`** with `$SLICE/brief.md`. **Do not pre-filter what it sees.** It writes `$SLICE/audit.md` and returns at most 400 words.
+2. **Delegate to the `security-auditor`** with the absolute path of the slice folder and its `brief.md`. **Do not pre-filter what it sees.** It returns its report as its final message, at most 600 words; save it verbatim to `<slice folder>/audit.md`.
 3. **Triage.** Anything touching a trigger surface — __MKTRUE_AUDIT_TRIGGERS__ — is **must-fix before merge**, no exceptions. Rank the rest honestly; do not inflate notes into blockers.
 4. **Route the fixes.** A bounded fix goes to the implementer as a follow-up brief. Anything structural is written up as a decision question for the founder, never improvised as a security design mid-review.
 5. **Record.** The verdict and its findings go into the slice record.

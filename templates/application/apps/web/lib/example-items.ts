@@ -1,10 +1,7 @@
 import "server-only";
 
-import {
-  exampleItemDtoSchema,
-  type ExampleItemDto,
-  type ExampleItemStatus,
-} from "@__MKTRUE_NAME__/contracts";
+// prettier-ignore
+import { exampleItemDtoSchema, type ExampleItemDto, type ExampleItemStatus } from "@__MKTRUE_NAME__/contracts";
 
 import { apiGet, type ApiResult } from "./api";
 

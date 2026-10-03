@@ -10,7 +10,7 @@ import type { NextConfig } from "next";
 try {
   process.loadEnvFile(resolve(import.meta.dirname, "../../.env"));
 } catch {
-  // No root .env — a fresh clone, or the prod image where env comes from the platform.
+  // No root .env — a fresh clone, or production, where env comes from the platform.
 }
 
 /**
@@ -54,15 +54,18 @@ const SECURITY_HEADERS = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
   },
+  // No `preload`: that is a promise about every subdomain, and it is the product's to make.
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ] as const;
 
 const nextConfig: NextConfig = {
-  // Self-contained `.next/standalone` server — the Docker image copies just this output plus the
-  // static assets, rather than the whole workspace and its node_modules.
+  // Self-contained `.next/standalone` server — a deploy copies just this output plus the static
+  // assets, rather than the whole workspace and its node_modules.
   output: "standalone",
   // The workspace root, not this package: without it Next traces from `apps/web` and the standalone
   // build misses files hoisted to the repo-root `node_modules` by pnpm.
   outputFileTracingRoot: resolve(import.meta.dirname, "../.."),
+  poweredByHeader: false,
 
   async headers() {
     return [{ source: "/:path*", headers: [...SECURITY_HEADERS] }];
@@ -76,6 +79,6 @@ const nextConfig: NextConfig = {
  *
  * The path is passed explicitly rather than relying on the default lookup, because the default is
  * relative to the directory `next build` runs in and this is a workspace package built from its
- * own directory in dev and from the repo root in Docker.
+ * own directory in dev and may be built from the repo root elsewhere.
  */
 export default createNextIntlPlugin("./i18n/request.ts")(nextConfig);

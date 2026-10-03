@@ -30,6 +30,7 @@ describe("the mongoose access-request repository", () => {
 
   beforeAll(async () => {
     memoryServer = await MongoMemoryServer.create();
+    // prettier-ignore
     await mongoose.connect(memoryServer.getUri(), { dbName: "__MKTRUE_NAME__-test" });
 
     // **Wait for the unique index, or this suite proves nothing.** Mongoose builds indexes
@@ -150,7 +151,7 @@ describe("the mongoose access-request repository", () => {
 
   it("treats a row written before the digests existed as carrying no verification", async () => {
     // Rows written by the old code have no such field. They must keep working and simply match no
-    // replay — which is what makes a rollback past this commit safe (docs/deploy.md).
+    // replay — which is what makes a rollback past this commit safe.
     await AccessRequestModel.create({ email: EMAIL, requestedAt: AT, status: "new" });
 
     await expect(repository.claimVerification(request, LATER, DIGEST, KEEP)).resolves.toEqual({
