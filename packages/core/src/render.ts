@@ -165,6 +165,16 @@ export function renderBench(
     files.push({ path, content: fill(body, command.body) });
   }
 
+  for (const reference of manifest.references) {
+    const body = bodies.get(reference.body);
+    if (body === undefined) continue;
+    const path = fill(
+      target.references.replace("__MKTRUE_REFERENCE_ID__", reference.id),
+      reference.body,
+    );
+    files.push({ path, content: fill(body, reference.body) });
+  }
+
   for (const contract of manifest.contracts) {
     const body = bodies.get(contract.body);
     if (body === undefined) continue;

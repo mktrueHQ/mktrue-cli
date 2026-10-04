@@ -15,9 +15,12 @@ import {
   checkTemplateSlots,
   checkTiers,
   exitCodeFor,
+  renderBenchFor,
+  writtenElsewhere,
   type ExitCode,
   type Finding,
 } from "@mktrue/core";
+import type { MktrueConfig } from "@mktrue/contracts";
 
 import type { Output } from "../ports.js";
 import type { Repo } from "../repo.js";
@@ -30,6 +33,27 @@ export interface GateRun {
   readonly lines: readonly string[];
   readonly run: number;
   readonly passed: number;
+}
+
+function renderedPaths(
+  repo: Repo,
+  config: MktrueConfig,
+  kitVersion: string,
+): ReadonlySet<string> | undefined {
+  if (repo.manifest === undefined) return undefined;
+  const paths = new Set<string>();
+  for (const target of config.targets) {
+    if (!(target in repo.manifest.targets)) return undefined;
+    const rendered = renderBenchFor(
+      { manifest: repo.manifest, bodies: repo.bodies },
+      config,
+      kitVersion,
+      target,
+    );
+    for (const file of rendered.files) paths.add(file.path);
+    for (const path of writtenElsewhere(rendered)) paths.add(path);
+  }
+  return paths;
 }
 
 export function runGates(repo: Repo, kitVersion: string): GateRun {
@@ -155,6 +179,7 @@ export function runGates(repo: Repo, kitVersion: string): GateRun {
           current: repo.owned,
           repoKitVersion: config.kit,
           kitVersion,
+          rendered: renderedPaths(repo, config, kitVersion),
         }),
       (r) => {
         const total = Object.keys(config.owned).length;

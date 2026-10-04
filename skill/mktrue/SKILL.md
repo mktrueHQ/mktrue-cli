@@ -5,9 +5,10 @@ description: Turn one sentence describing a product idea into a repository mktru
 
 # mktrue
 
-`mktrue new` renders a repository from answers to a fixed set of questions.
-This skill gets those answers from a conversation instead of a terminal, then
-runs the same command a person would type. It never renders anything itself.
+This skill gets the answers `mktrue new` asks for from a conversation, then
+runs `new` as a person would. It never renders a file itself, and never
+re-implements a check `new` runs: the terminal, the git identity, the answers
+schema, the region-marker refusal.
 
 ## Steps
 
@@ -18,63 +19,16 @@ runs the same command a person would type. It never renders anything itself.
    mktrue doctor --write
    ```
 
-2. **Read the sentence.** From what the founder wrote, propose:
-   - the template, one of four. `application`: a product people use
-     through a web interface, with its API. `api-service`: an API with no
-     interface of its own. `landing`: a public page that presents a
-     product and takes access requests. `infrastructure`: the database and
-     private network that products share, not a product itself. When the
-     sentence fits none of the last three, `application`
-   - a name matching `^[a-z][a-z0-9-]*$`
-   - the purpose and the data classes it holds
+2. **Read the sentence.** Propose the template (`application`,
+   `api-service`, `landing` or `infrastructure`; `application` when none of
+   the other three fits), a name matching `^[a-z][a-z0-9-]*$`, the purpose
+   and the data classes.
 
-3. **One round.** Ask every question below at once, in the chat, with the
-   proposals and the defaults filled in. This list and its defaults are the
-   same ones `mktrue new` asks in a terminal; a kit test checks the two do
-   not drift.
+3. **One round.** Ask every question in the table below at once, proposals
+   and defaults filled in. The founder confirms every answer in this round.
 
-   | Key            | Label     | Default |
-   | -------------- | --------- | ------- |
-   | `purpose`      | purpose   | —       |
-   | `owner`        | owner     | —       |
-   | `audienceTest` | audience  | —       |
-   | `stakes`       | stakes    | —       |
-   | `dataClasses`  | data      | —       |
-   | `auth`         | sign-in   | `clerk` |
-   | `languages`    | languages | `en`    |
-   | `consumers`    | consumers | —       |
-   | `title`        | title     | —       |
-   | `ports.web`    | web port  | `4100`  |
-   | `ports.api`    | api port  | `4101`  |
-
-   `application` asks all nine; `api-service` leaves `ports.web` out;
-   `landing` asks `title` instead of either port, its default the name with
-   each hyphen-separated word capitalised (`strafe-landing` ->
-   `Strafe Landing`); `infrastructure` asks `consumers` instead of either
-   port, the products this instance serves as comma-separated slugs.
-   Neither `landing` nor `infrastructure` has a sign-in: `auth` is not
-   asked there, and is written as `none`.
-   `siblings` and `skills` are always `[]`. A blank `dataClasses` reply
-   means none, so `[]` is a valid answer there. The founder confirms every
-   answer in this one round, not turn by turn.
-
-4. **Write `answers.json`** with the Write tool, into a fresh directory
-   made with `mktemp -d`. Never write it inside the target directory. Every
-   key in the table above is a top-level string except `ports`, an object,
-   and `dataClasses`/`languages`, arrays; `siblings` and `skills` are `[]`:
-
-   ```json
-   {
-     "name": "ledger",
-     "purpose": "...",
-     "owner": "...",
-     "ports": { "api": 4101, "web": 4100 },
-     "dataClasses": ["money"],
-     "languages": ["en"],
-     "siblings": [],
-     "skills": []
-   }
-   ```
+4. **Write the answers file**, `answers.json`, with the Write tool, into a
+   fresh `mktemp -d` directory, never inside the target directory.
 
 5. **Run**, in the directory the founder chose to build in:
 
@@ -83,26 +37,68 @@ runs the same command a person would type. It never renders anything itself.
    ```
 
    `<template>` is one of the four literals `application`, `api-service`,
-   `landing` or `infrastructure`, never built from the sentence. Use the
-   name only after it matches the pattern above, and pass it quoted. No
-   answer text, and no part of the sentence, ever reaches the shell: every
-   answer goes through the file the CLI reads.
+   `landing` or `infrastructure`, never built from the sentence. Pass the
+   name quoted, only once it matches the pattern. No answer text and no part
+   of the sentence reaches the shell: answers go through the answers file.
 
-6. **Relay** the CLI's own lines and exit code, unchanged. On exit 2, fix
-   the one answer it named and run again. On exit 3 or exit 4, stop and
-   relay the CLI's own fix line to the founder; never run it yourself, edit
-   a global setting, or delete anything in the founder's way. Never edit the
-   rendered tree by hand, whatever the CLI said. On every exit, remove the
-   temporary directory with `rm -r -- "<the exact path mktemp printed>"`,
-   never a path rebuilt from a variable.
+6. **Relay** the CLI's lines and exit code, unchanged. On exit 2, fix the
+   answer it named and run again. On exit 3 or 4, stop and relay its fix
+   line; never run it yourself, edit a global setting, or delete anything in
+   the founder's way. Never edit the rendered tree by hand. On every exit,
+   remove the temporary directory with
+   `rm -r -- "<the exact path mktemp printed>"`, never a rebuilt path.
 
 7. **Hand off.** On exit 0, tell the founder to open a fresh Claude Code
-   session in `./<name>` and run `/create-roadmap` there, with their
-   original sentence as a place to start. This skill does not run it.
+   session in `./<name>` and run `/create-roadmap` there, starting from their
+   sentence. This skill does not run it.
 
-## What this skill never does
+## Reference
 
-- Never renders a file, writes into the target, or edits what `new` made.
-- Never re-implements a check `new` already runs: the terminal check, the
-  git identity, the answers schema, the region-marker refusal.
-- Never puts an answer, or the founder's sentence, on the command line.
+### The templates
+
+- `application`: a product people use through a web interface, with its API.
+- `api-service`: an API with no interface of its own.
+- `landing`: a public page that presents a product and takes access requests.
+- `infrastructure`: the database and private network products share.
+
+### The questions
+
+| Key            | Label     | Default |
+| -------------- | --------- | ------- |
+| `purpose`      | purpose   | —       |
+| `owner`        | owner     | —       |
+| `audienceTest` | audience  | —       |
+| `stakes`       | stakes    | —       |
+| `dataClasses`  | data      | —       |
+| `auth`         | sign-in   | `clerk` |
+| `languages`    | languages | `en`    |
+| `consumers`    | consumers | —       |
+| `title`        | title     | —       |
+| `ports.web`    | web port  | `4100`  |
+| `ports.api`    | api port  | `4101`  |
+
+`application` asks all nine; `api-service` leaves `ports.web` out;
+`landing` asks `title` instead of either port, defaulting to the name with
+each hyphen-separated word capitalised (`strafe-landing` -> `Strafe Landing`);
+`infrastructure` asks `consumers`, the comma-separated product slugs it
+serves, instead of either port. `landing` and `infrastructure` have no
+sign-in: `auth` is not asked, and is written `none`. A blank `dataClasses`
+reply is `[]`.
+
+### The answers file
+
+Top-level strings, except `ports` (an object) and `dataClasses`,
+`languages`, `siblings`, `skills` (arrays; the last two always `[]`):
+
+```json
+{
+  "name": "ledger",
+  "purpose": "...",
+  "owner": "...",
+  "ports": { "api": 4101, "web": 4100 },
+  "dataClasses": ["money"],
+  "languages": ["en"],
+  "siblings": [],
+  "skills": []
+}
+```

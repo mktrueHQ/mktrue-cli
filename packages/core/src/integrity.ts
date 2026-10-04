@@ -21,6 +21,11 @@ export function benchEntries(manifest: BenchManifest): BenchEntry[] {
     })),
     ...manifest.contracts.map((c) => ({ name: `contract ${c.id}`, body: c.body, slots: c.slots })),
     ...manifest.commands.map((c) => ({ name: `command ${c.id}`, body: c.body, slots: c.slots })),
+    ...manifest.references.map((r) => ({
+      name: `reference ${r.id}`,
+      body: r.body,
+      slots: r.slots,
+    })),
     ...manifest.workflows.map((w) => ({ name: `workflow ${w.id}`, body: w.body, slots: w.slots })),
     ...manifest.rules.map((r) => ({
       name: `rules section ${r.section}`,
@@ -92,7 +97,13 @@ export function checkBenchIntegrity(
         exit: EXIT.FINDINGS,
       });
     }
-    for (const value of [target.roles, target.commands, target.rules, target.settings]) {
+    for (const value of [
+      target.roles,
+      target.commands,
+      target.references,
+      target.rules,
+      target.settings,
+    ]) {
       for (const slot of slotsIn(value)) used.add(slot);
     }
   }

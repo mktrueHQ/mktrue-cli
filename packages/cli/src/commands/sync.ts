@@ -167,6 +167,11 @@ export async function runSync(
       await fs.rename(item.from, item.to);
       landed.add(item.to);
     }
+    for (const entry of plan.entries) {
+      if (entry.retired !== true) continue;
+      await fs.remove(entry.path);
+      landed.add(entry.path);
+    }
 
     const updated = {
       ...(repo.rawConfig ?? {}),
@@ -189,7 +194,8 @@ export async function runSync(
   for (const finding of allFindings) out.finding(finding);
 
   const exit = exitCodeFor(allFindings);
-  if (!options.write && (update > 0 || conflict > 0)) {
+  const retired = plan.entries.filter((entry) => entry.retired === true).length;
+  if (!options.write && (update > 0 || conflict > 0 || retired > 0)) {
     out.line(`mktrue: ${summary} · run with --write to apply`);
   } else {
     out.line(`mktrue: ${summary}`);

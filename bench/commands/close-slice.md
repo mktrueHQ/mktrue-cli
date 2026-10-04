@@ -4,7 +4,7 @@ Gates, merge, the merge confirmed, state replaced. **Do the steps in order; do n
 
 ## 1 · The tree is yours and clean of plants
 
-`git status`. Confirm no agent is still running. Verify the reviewer's snapshot manifest with `sha256sum -c`. Run the formatter check — a formatter-clean plant would reach the integration branch behind a green build.
+`git status`. Confirm no agent is still running. Verify the reviewer's snapshot manifest with `sha256sum -c`. Run the formatter check.
 
 ## 2 · The authoritative gate run
 

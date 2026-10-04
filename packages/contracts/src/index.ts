@@ -20,6 +20,7 @@ export {
   commandSchema,
   contractDocumentSchema,
   documentSchema,
+  referenceSchema,
   relativePathSchema,
   roleSchema,
   rulesOwnerSchema,

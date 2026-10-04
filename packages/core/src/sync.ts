@@ -13,6 +13,8 @@ export interface SyncEntry {
   readonly action: SyncAction;
   readonly reason: string;
   readonly next?: string | undefined;
+  /** The kit no longer renders this owned path: `--write` deletes it and drops it from `owned`. */
+  readonly retired?: true | undefined;
 }
 
 export interface SyncInput {
@@ -22,6 +24,8 @@ export interface SyncInput {
   readonly next: ReadonlyMap<string, string>;
   readonly adopt?: boolean | undefined;
   readonly restore?: boolean | undefined;
+  /** Owned paths the kit still writes another way (the rules file, the settings file): never retired. */
+  readonly writtenElsewhere?: ReadonlySet<string> | undefined;
 }
 
 export interface SyncPlan {
@@ -55,8 +59,18 @@ export function planSync(input: SyncInput): SyncPlan {
     const onDisk = input.current.get(path);
     const recorded = input.owned[path];
 
+    const retired =
+      next === undefined && recorded !== undefined && input.writtenElsewhere?.has(path) !== true;
+
     if (onDisk === undefined) {
-      if (recorded !== undefined) {
+      if (retired) {
+        entries.push({
+          path,
+          action: "removed",
+          reason: "retired by the kit, and already gone",
+          retired: true,
+        });
+      } else if (recorded !== undefined) {
         if (input.restore === true && next !== undefined) {
           entries.push({ path, action: "update", reason: "restored at your request", next });
         } else {
@@ -72,8 +86,33 @@ export function planSync(input: SyncInput): SyncPlan {
       continue;
     }
 
+    if (next === undefined && !retired) {
+      entries.push({ path, action: "keep", reason: "the kit writes this file another way" });
+      continue;
+    }
+
     if (next === undefined) {
-      entries.push({ path, action: "keep", reason: "the kit no longer ships this file" });
+      if (hashContent(onDisk) === recorded) {
+        entries.push({
+          path,
+          action: "removed",
+          reason: "retired by the kit · --write deletes it",
+          retired: true,
+        });
+      } else {
+        entries.push({
+          path,
+          action: "conflict",
+          reason: "retired by the kit, edited by you",
+        });
+        findings.push({
+          gate: "sync",
+          what: `${path} is no longer rendered by the kit, and was edited here`,
+          why: "deleting it would discard your edit; keeping it leaves a file the method no longer has",
+          fix: `delete ${path} if the kit's replacement covers your edit, or pin it in .mktrue.json to keep it`,
+          exit: EXIT.DECISION,
+        });
+      }
       continue;
     }
 
@@ -134,8 +173,12 @@ export function ownedAfterSync(
 ): Record<string, string> {
   const updated: Record<string, string> = { ...owned };
   for (const entry of plan.entries) {
-    if (entry.action !== "update" || entry.next === undefined) continue;
     if (landed !== undefined && !landed.has(entry.path)) continue;
+    if (entry.retired === true) {
+      delete updated[entry.path];
+      continue;
+    }
+    if (entry.action !== "update" || entry.next === undefined) continue;
     updated[entry.path] = hashContent(entry.next);
   }
   return updated;
@@ -174,6 +217,13 @@ export function renderBenchFor(
   return { ...renderBench(bench.manifest, bench.bodies, values, target, sectionBodies), values };
 }
 
+/** What the bench writes beside its owned files: the rules file and the settings file. */
+export function writtenElsewhere(rendered: BenchRender): ReadonlySet<string> {
+  const paths = new Set([rendered.rules.path]);
+  if (rendered.settings !== undefined) paths.add(rendered.settings.path);
+  return paths;
+}
+
 export interface BenchPlan {
   readonly files: SyncPlan;
   readonly rules: RulesPlan;
@@ -193,6 +243,7 @@ export function planBench(
       next: new Map(rendered.files.map((file) => [file.path, file.content] as const)),
       adopt: options.adopt,
       restore: options.restore,
+      writtenElsewhere: writtenElsewhere(rendered),
     }),
     rules: planRules({
       rendered: rendered.rules,

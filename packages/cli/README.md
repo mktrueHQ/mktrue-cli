@@ -49,7 +49,7 @@ It renders into a temporary directory beside the target, runs the template's gat
 What it leaves in `./ledger`, in one commit:
 
 - the product: the template's code and tests, a `README.md` about the product, its `pnpm-lock.yaml`, and a CI workflow that runs its gates
-- the method: `CLAUDE.md`, `.claude/agents/`, `.claude/commands/`, `.claude/settings.json` with the deny rules, and a workflow that runs `mktrue check`
+- the method: `CLAUDE.md`, `.claude/agents/`, `.claude/commands/`, `.claude/reference/`, `.claude/settings.json` with the deny rules, and a workflow that runs `mktrue check`
 - the seed documents: `docs/STATE.md`, `docs/ROADMAP.md`, `docs/decisions/index.md`, `docs/design/README.md`, and the created log under `docs/log/`
 - `.mktrue.json`: the answers, the template and kit versions, the budgets, the gates, and a hash of every file the kit owns
 

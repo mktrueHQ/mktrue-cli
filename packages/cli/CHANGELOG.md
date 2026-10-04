@@ -1,5 +1,11 @@
 # mktrue
 
+## 1.1.0
+
+### Minor Changes
+
+- bb327ec: The method says each rule once. `/plant` and `/worktree` stop being commands and become reference files, `.claude/reference/plant.md` and `.claude/reference/worktree.md`, read when an agent or the lead is pointed at them. `/review-security` is retired: its triage rules are part of `/start-slice`'s agent step. `/start-slice` splits in two: `/brief` writes the brief and stops, and `/start-slice` reads it and runs the agents. The report protocol lives in `.claude/agents/README.md` alone, and each agent description says when to use it. Run `mktrue sync` to see the change, then `mktrue sync --write`: it deletes each retired command you never edited and drops it from `owned`. One you edited is a conflict, kept in place: delete it, or pin it to keep it. Until the sync runs, `mktrue check` reports each retired file as drift.
+
 ## 1.0.0
 
 ### Major Changes

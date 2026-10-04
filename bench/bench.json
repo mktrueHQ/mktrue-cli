@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "slotSyntax": "__MKTRUE_<KEY>__",
   "slots": {
     "NAME": {
@@ -104,6 +104,11 @@
       "required": true,
       "kind": "path"
     },
+    "REFERENCE_ID": {
+      "from": "derived.referenceId",
+      "required": true,
+      "kind": "path"
+    },
     "PATH_STATE": {
       "from": "config.paths.state",
       "required": true,
@@ -140,7 +145,7 @@
       "id": "architect",
       "title": "Architect",
       "body": "agents/architect.md",
-      "description": "Designs before anyone builds \u2014 boundaries, data shapes, ports, and the milestone plan in docs/design/. Use at the start of any milestone or whenever a change spans more than one boundary. Produces a plan and a decision list; writes no production code.",
+      "description": "Use at the start of a milestone, or when a change spans more than one boundary, to get the milestone plan and its kickoff page in docs/design/; it never writes production code.",
       "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
       "model": "opus",
       "effort": "xhigh",
@@ -151,18 +156,18 @@
       "id": "implementer",
       "title": "Implementer",
       "body": "agents/implementer.md",
-      "description": "Builds one focused, well-tested slice from the brief in its slice folder, following CLAUDE.md and the milestone plan. The lead delegates non-trivial changes here, then hands the result to the reviewer. Does not commit or open pull requests.",
+      "description": "Use when a slice's brief is written and its surface is not the interface, to build the change with its tests and one full gate run; it never commits, pushes or opens a pull request.",
       "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
       "model": "opus",
       "effort": "high",
-      "slots": ["GATES"],
+      "slots": [],
       "report": "<slice folder>/implementer.md"
     },
     {
       "id": "ui-engineer",
       "title": "UI engineer",
       "body": "agents/ui-engineer.md",
-      "description": "Builds and reviews the user-facing surface \u2014 screens, charts, theming, accessibility, offline behaviour. Use for any interface slice or responsive work.",
+      "description": "Use when a slice's surface is the interface (screens, charts, theming, accessibility, responsive or offline behaviour), to build it and verify it at 360px; it never hardcodes a string or a raw design value.",
       "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
       "model": "opus",
       "effort": "high",
@@ -173,7 +178,7 @@
       "id": "security-auditor",
       "title": "Security auditor",
       "body": "agents/security-auditor.md",
-      "description": "Defensive security pass. Mandatory before merging anything touching a trigger surface. Read-only; finds and explains weaknesses, does not write exploits.",
+      "description": "Use before merging a slice whose diff touches a trigger surface, to get findings ranked by severity and a safe-to-merge or blocked verdict; it is read-only and never writes exploits.",
       "tools": ["Read", "Grep", "Glob", "Bash"],
       "model": "opus",
       "effort": "high",
@@ -184,7 +189,7 @@
       "id": "reviewer",
       "title": "Reviewer",
       "body": "agents/reviewer.md",
-      "description": "Critiques an implemented slice against CLAUDE.md \u2014 exposed surface, correctness, architecture, tests, simplicity \u2014 without editing anything. Verifies by planting deliberate bugs. Read-only; ranks findings by severity and ends with a verdict.",
+      "description": "Use after a slice is built, and after its audit if one ran, to get findings ranked by severity, verified by planting deliberate bugs, and an approve or revise verdict; it never edits a file.",
       "tools": ["Read", "Bash", "Grep", "Glob"],
       "model": "opus",
       "effort": "high",
@@ -195,7 +200,7 @@
       "id": "docs-writer",
       "title": "Docs writer",
       "body": "agents/docs-writer.md",
-      "description": "Keeps the documentation honest \u2014 README, the decision index, plans, the roadmap, the environment example, and docs/STATE.md. Use at milestone boundaries and whenever behaviour has drifted from what the docs claim.",
+      "description": "Use at a milestone boundary, or whenever behaviour has drifted from what the docs claim, to bring the README, the decision index, plans, the roadmap, the environment example and docs/STATE.md back to the truth; it never documents what does not exist.",
       "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
       "model": "sonnet",
       "effort": "low",
@@ -220,6 +225,12 @@
       "slots": []
     },
     {
+      "id": "brief",
+      "title": "Write the brief",
+      "body": "commands/brief.md",
+      "slots": ["AUDIT_TRIGGERS"]
+    },
+    {
       "id": "start-slice",
       "title": "Start a slice",
       "body": "commands/start-slice.md",
@@ -232,28 +243,10 @@
       "slots": ["GATES", "BUDGET_STATE", "BASE_BRANCH"]
     },
     {
-      "id": "worktree",
-      "title": "Work in a worktree",
-      "body": "commands/worktree.md",
-      "slots": ["BASE_BRANCH"]
-    },
-    {
-      "id": "plant",
-      "title": "Plant a bug",
-      "body": "commands/plant.md",
-      "slots": []
-    },
-    {
       "id": "new-module",
       "title": "Scaffold a module",
       "body": "commands/new-module.md",
       "slots": []
-    },
-    {
-      "id": "review-security",
-      "title": "Run a security review",
-      "body": "commands/review-security.md",
-      "slots": ["AUDIT_TRIGGERS"]
     },
     {
       "id": "create-roadmap",
@@ -266,6 +259,20 @@
       "title": "Update the roadmap",
       "body": "commands/update-roadmap.md",
       "slots": ["BUDGET_STATE"]
+    }
+  ],
+  "references": [
+    {
+      "id": "plant",
+      "title": "Plant a bug",
+      "body": "references/plant.md",
+      "slots": []
+    },
+    {
+      "id": "worktree",
+      "title": "Work in a worktree",
+      "body": "references/worktree.md",
+      "slots": ["BASE_BRANCH"]
     }
   ],
   "workflows": [
@@ -433,6 +440,7 @@
     "claude-code": {
       "roles": ".claude/agents/__MKTRUE_ROLE_ID__.md",
       "commands": ".claude/commands/__MKTRUE_COMMAND_ID__.md",
+      "references": ".claude/reference/__MKTRUE_REFERENCE_ID__.md",
       "rules": "CLAUDE.md",
       "settings": ".claude/settings.json",
       "settingsBody": "settings/claude-code.json",

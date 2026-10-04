@@ -7,6 +7,8 @@ export interface DriftInput {
   readonly current: ReadonlyMap<string, string>;
   readonly repoKitVersion: string;
   readonly kitVersion: string;
+  /** Every path the kit's bench renders here; an owned path outside it is retired. */
+  readonly rendered?: ReadonlySet<string> | undefined;
 }
 
 export function checkDrift(input: DriftInput): { findings: Finding[]; edited: number } {
@@ -16,6 +18,17 @@ export function checkDrift(input: DriftInput): { findings: Finding[]; edited: nu
 
   for (const [path, recorded] of Object.entries(input.owned)) {
     if (pinned.has(path)) continue;
+
+    if (input.rendered !== undefined && !input.rendered.has(path)) {
+      findings.push({
+        gate: "drift",
+        what: `${path} is owned by the kit, which no longer renders it`,
+        why: "the method has retired this file, so an agent may still follow what it says",
+        fix: "run `mktrue sync` to see the removal, then `mktrue sync --write` to apply it",
+        exit: EXIT.FINDINGS,
+      });
+      continue;
+    }
 
     const content = input.current.get(path);
     if (content === undefined) {

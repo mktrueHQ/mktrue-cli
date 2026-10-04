@@ -5,7 +5,7 @@ The kickoff. One plan, one kickoff page, answered in one sitting.
 ## Steps
 
 1. Read `docs/STATE.md` and `docs/ROADMAP.md`. If the roadmap lists no milestones, stop and run `/create-roadmap` first: a milestone the roadmap does not name has nothing to be measured against.
-2. Run the **architect**. It writes the milestone plan to `docs/design/<milestone>.md` and the kickoff page to `docs/design/<milestone>-kickoff.md`. The page lives under `docs/design/`, never `docs/decisions/`: it holds every open call at once, and a decision file's budget is sized for one. The architect returns its report as its final message and writes no report file: save that message verbatim to `<main checkout>/.mktrue/slices/<milestone>-kickoff/architect.md`, a folder you make as `/start-slice` step 2 makes a slice folder. Never save it under `docs/design/`: a report is not a design.
+2. Run the **architect**. It writes the milestone plan to `docs/design/<milestone>.md` and the kickoff page to `docs/design/<milestone>-kickoff.md`. The page lives under `docs/design/`, never `docs/decisions/`. Save its report as rule 2 of `.claude/agents/README.md` says, verbatim to `<main checkout>/.mktrue/slices/<milestone>-kickoff/architect.md`, a folder you make as `/brief` step 2 makes a slice folder. Never save it under `docs/design/`: a report is not a design.
 3. Stop. Hand the kickoff page to the founder and wait.
 4. When it comes back answered, split it: one file per decision under `docs/decisions/`, each with its own number, and one line per decision in `docs/decisions/index.md`. The kickoff page stays where it is, as the record of what was asked.
 5. Freeze the plan. Record the slice list in `docs/STATE.md`.

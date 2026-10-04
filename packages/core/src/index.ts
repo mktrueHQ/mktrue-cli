@@ -52,7 +52,14 @@ export {
 export type { SettingsCheck } from "./settings.js";
 export type { RulesAction, RulesInput, RulesPlan } from "./rules.js";
 
-export { configAfterBench, ownedAfterSync, planBench, planSync, renderBenchFor } from "./sync.js";
+export {
+  configAfterBench,
+  ownedAfterSync,
+  planBench,
+  planSync,
+  renderBenchFor,
+  writtenElsewhere,
+} from "./sync.js";
 export type {
   BenchPlan,
   BenchRender,

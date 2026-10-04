@@ -58,6 +58,13 @@ export const commandSchema = z.object({
   slots: z.array(slotKeySchema),
 });
 
+export const referenceSchema = z.object({
+  id: safeIdSchema,
+  title: z.string().min(1),
+  body: relativePathSchema,
+  slots: z.array(slotKeySchema),
+});
+
 export const rulesOwnerSchema = z.enum(["kit", "repo"]);
 
 export const rulesSectionSchema = z.object({
@@ -100,9 +107,15 @@ export const targetVocabularySchema = z.object({
   effortUnsupportedOn: z.array(z.string().min(1)),
 });
 
+const referencesPathSchema = relativePathSchema.refine(
+  (p) => !/^(\.[\\/])*\.claude[\\/]+(commands|agents)([\\/]|$)/.test(p),
+  { message: "references must not render under .claude/commands or .claude/agents" },
+);
+
 export const targetSchema = z.object({
   roles: relativePathSchema,
   commands: relativePathSchema,
+  references: referencesPathSchema,
   rules: relativePathSchema,
   settings: relativePathSchema,
   settingsBody: relativePathSchema,
@@ -118,6 +131,7 @@ const baseBenchManifestSchema = z.object({
   roles: z.array(roleSchema).min(1),
   contracts: z.array(contractDocumentSchema),
   commands: z.array(commandSchema).min(1),
+  references: z.array(referenceSchema).default([]),
   workflows: z.array(workflowSchema).default([]),
   rules: z.array(rulesSectionSchema).min(1),
   docs: z.array(documentSchema),
@@ -131,6 +145,7 @@ export const benchManifestSchema = baseBenchManifestSchema.superRefine((manifest
     ...manifest.roles.map((r) => ({ name: `role ${r.id}`, slots: r.slots })),
     ...manifest.contracts.map((c) => ({ name: `contract ${c.id}`, slots: c.slots })),
     ...manifest.commands.map((c) => ({ name: `command ${c.id}`, slots: c.slots })),
+    ...manifest.references.map((r) => ({ name: `reference ${r.id}`, slots: r.slots })),
     ...manifest.workflows.map((w) => ({ name: `workflow ${w.id}`, slots: w.slots })),
     ...manifest.rules.map((r) => ({ name: `rules section ${r.section}`, slots: r.slots })),
     ...manifest.docs.map((d) => ({ name: `document ${d.id}`, slots: d.slots })),
