@@ -243,6 +243,9 @@
       "path": "services/api/src/contexts/access-request/infrastructure/hmac-token-signer.ts"
     },
     {
+      "path": "services/api/src/contexts/access-request/infrastructure/in-memory-wrong-code-counter.ts"
+    },
+    {
       "path": "services/api/src/contexts/access-request/infrastructure/mailers.ts"
     },
     {
@@ -282,7 +285,13 @@
       "path": "services/api/test/app/config.test.ts"
     },
     {
+      "path": "services/api/test/contexts/access-request/application/code-secrecy.test.ts"
+    },
+    {
       "path": "services/api/test/contexts/access-request/application/flow.test.ts"
+    },
+    {
+      "path": "services/api/test/contexts/access-request/application/guessing.test.ts"
     },
     {
       "path": "services/api/test/contexts/access-request/application/replay.test.ts"
@@ -301,6 +310,12 @@
     },
     {
       "path": "services/api/test/controllers/access-request.test.ts"
+    },
+    {
+      "path": "services/api/test/controllers/logging.test.ts"
+    },
+    {
+      "path": "services/api/test/middlewares/rate-limit.test.ts"
     },
     {
       "path": "services/api/test/test-support/fakes.ts"

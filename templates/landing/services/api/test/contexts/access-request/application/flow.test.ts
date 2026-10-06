@@ -57,7 +57,7 @@ describe("verifying a request", () => {
     // Swap the payload for one naming a different address, keeping the original signature.
     const forged = h.tokenSigner.sign({
       request: { email: "attacker@example.com" },
-      codeHash: "00",
+      codeMac: "00",
       exp: AT.getTime() + 60_000,
     });
     const [forgedPayload] = forged.split(".");

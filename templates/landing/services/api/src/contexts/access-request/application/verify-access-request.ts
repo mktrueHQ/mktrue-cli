@@ -13,6 +13,7 @@ import type {
   Mailer,
   TokenSigner,
   VerificationClaim,
+  WrongCodeCounter,
 } from "./ports";
 
 export interface VerifyAccessRequestInput {
@@ -32,7 +33,11 @@ export interface VerifyAccessRequestDeps {
    * sizing and its proof live. A memory size, deliberately, not a mail budget.
    */
   readonly verificationMemory: number;
+  readonly wrongCodes: WrongCodeCounter;
 }
+
+/** The wrong codes one token may be sent. The next verification of it is refused, right or wrong. */
+export const MAX_WRONG_CODES = 5;
 
 /**
  * Step 2: check the code against the token, then deliver the request to __MKTRUE_OWNER__ and store it.
@@ -76,16 +81,24 @@ export async function verifyAccessRequest(
   if (payload === null) throw new InvalidVerificationToken();
 
   // Server-side, against an injected clock — never a client-supplied timestamp.
-  if (payload.exp <= deps.clock.now().getTime()) throw new VerificationExpired();
+  const now = deps.clock.now().getTime();
+  if (payload.exp <= now) throw new VerificationExpired();
+
+  // A token that has had its wrong codes is dead, and answers as an expired one does: the right
+  // code is refused too, or the sixth guess would be as good as the first.
+  const tokenDigest = deps.tokenSigner.digest(input.token);
+  if (deps.wrongCodes.isSpent(tokenDigest, MAX_WRONG_CODES, now)) throw new VerificationExpired();
 
   const code = VerificationCode.of(input.code);
-  if (!code.matches(payload.codeHash)) throw new InvalidVerificationCode();
+  if (!deps.tokenSigner.codeMatches(code.value, payload)) {
+    deps.wrongCodes.record(tokenDigest, payload.exp);
+    throw new InvalidVerificationCode();
+  }
 
   // Rebuilt through the domain rather than trusted off the token: the HMAC proves we issued the
   // payload, not that our own validation was correct when we did.
   const request = AccessRequest.create(payload.request);
 
-  const tokenDigest = deps.tokenSigner.digest(input.token);
   const claim = await claimOrFailOpen(request, tokenDigest, deps);
 
   // The pre-image is the decision: it already held this digest, so the mail went the first time.
@@ -115,9 +128,9 @@ export async function verifyAccessRequest(
  * for the duration of an outage, and lose the request entirely — nothing about it is stored until
  * this point.
  *
- * The failure is reported as a fixed code. What the error object itself carries is redacted at the
- * adapter (`safeErrorSummary`), which is where a Mongo error's embedded address or digest is
- * stripped (CLAUDE.md §4.3).
+ * The failure is reported as a fixed code. Of the error object itself the adapter
+ * (`safeErrorSummary`) logs the name and the code, never the message, which is where a Mongo error
+ * quotes an address or a digest (CLAUDE.md §4.3).
  */
 async function claimOrFailOpen(
   request: AccessRequest,

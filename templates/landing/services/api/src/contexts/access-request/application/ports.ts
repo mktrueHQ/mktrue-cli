@@ -1,4 +1,8 @@
-import type { AccessRequest, AccessRequestStatus } from "../domain/access-request";
+import type {
+  AccessRequest,
+  AccessRequestFields,
+  AccessRequestStatus,
+} from "../domain/access-request";
 import type { VerificationCode } from "../domain/verification-code";
 
 export interface SendVerificationCodeInput {
@@ -29,12 +33,13 @@ export interface CodeGenerator {
 }
 
 /**
- * The entire state of a pending access request — carried in the signed token, stored nowhere
- *. Only the code's **hash** is here.
+ * The entire state of a pending access request, carried in the signed token and stored nowhere.
+ * Of the code it holds only `codeMac`.
  */
 export interface AccessRequestTokenPayload {
-  readonly request: { readonly email: string; readonly note?: string };
-  readonly codeHash: string;
+  readonly request: AccessRequestFields;
+  /** What `TokenSigner.sealCode` answered for this request's code. */
+  readonly codeMac: string;
   /** Expiry, epoch milliseconds. */
   readonly exp: number;
 }
@@ -45,13 +50,20 @@ export interface TokenSigner {
   /** `null` for a missing, malformed, or tampered-with token — the three are indistinguishable. */
   verify(token: string): AccessRequestTokenPayload | null;
   /**
+   * A MAC over the code, the expiry and the request, **keyed with the server's secret**. The token
+   * travels to the browser, and a code has a million values: anything computable without the
+   * secret gives the code to whoever holds the token.
+   */
+  sealCode(code: string, request: AccessRequestFields, exp: number): string;
+  /** Whether `code` is the one sealed into `payload`, compared in constant time. */
+  codeMatches(code: string, payload: AccessRequestTokenPayload): boolean;
+  /**
    * A one-way digest of the whole token, which is how a replay is recognised.
    *
-   * **Of the token, never of `codeHash`.** That hash is a salt-free SHA-256 of six digits, so
-   * storing it beside an address would put a trivially reversible value in the mailbox — and two
-   * independent requests draw the same six digits once in a million, which would silently swallow a
-   * genuine second request in the one path where silence is worst. The token carries a millisecond
-   * `exp`, so its digest collides never in practice and reverses to nothing.
+   * **Of the token, never of anything about the code.** Two independent requests draw the same six
+   * digits once in a million, and a marker made from the code would silently swallow a genuine
+   * second request in the one path where silence is worst. The token carries a millisecond `exp`,
+   * so its digest collides never in practice and reverses to nothing.
    *
    * **Never the token itself.** Until `exp` a token is a bearer credential; a digest is not.
    */
@@ -121,6 +133,23 @@ export interface AccessRequestRepository {
   releaseVerification(email: string, tokenDigest: string, createdRow: boolean): Promise<void>;
 
   list(): Promise<readonly StoredAccessRequest[]>;
+}
+
+/**
+ * How many wrong codes each live token has been sent. A code has a million values and a token
+ * lives fifteen minutes, so a token is given a handful of guesses and no more.
+ *
+ * Keyed by the token's digest, never the token. Synchronous on purpose: the check, the comparison
+ * and the count happen with no `await` between them, so concurrent guesses cannot share one count.
+ */
+export interface WrongCodeCounter {
+  /**
+   * Whether the token has had `limit` wrong codes. Also `true` for a token that is not counted
+   * while the counter is full: a guess that cannot be counted is not allowed.
+   */
+  isSpent(tokenDigest: string, limit: number, now: number): boolean;
+  /** Counts one wrong code. `expiresAt` is the token's own expiry, when the count is dropped. */
+  record(tokenDigest: string, expiresAt: number): void;
 }
 
 /**

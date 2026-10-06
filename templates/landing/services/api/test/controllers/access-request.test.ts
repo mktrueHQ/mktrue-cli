@@ -15,7 +15,6 @@ import {
   fixedCodeGenerator,
   recordingLogger,
   refusingMailer,
-  unavailableRepository,
 } from "../test-support/fakes";
 
 const AT = new Date("2026-09-09T21:04:00.000Z");
@@ -258,6 +257,29 @@ describe("POST /access-request/verify", () => {
     expect(rows.size).toBe(1);
   });
 
+  it("answers a token killed by five wrong codes exactly as it answers an expired one", async () => {
+    const clock = fixedClock(AT);
+    const { app, sent, rows } = await server({ clock });
+    const verify = (token: string, code: string) =>
+      app.inject({ method: "POST", url: "/access-request/verify", payload: { token, code } });
+
+    const killed = await tokenFor(app);
+    for (let i = 0; i < 5; i += 1) expect((await verify(killed, "000000")).statusCode).toBe(400);
+    const dead = await verify(killed, CODE);
+
+    clock.set(new Date(AT.getTime() + 1));
+    const outlived = await tokenFor(app);
+    clock.set(new Date(AT.getTime() + 16 * 60 * 1000));
+    const expired = await verify(outlived, CODE);
+
+    expect(dead.statusCode).toBe(400);
+    expect(dead.statusCode).toBe(expired.statusCode);
+    expect(dead.rawPayload.equals(expired.rawPayload)).toBe(true);
+    expect(dead.headers["content-type"]).toBe(expired.headers["content-type"]);
+    expect(sent.filter((mail) => mail.kind === "delivery")).toHaveLength(0);
+    expect(rows.size).toBe(0);
+  });
+
   it("answers 400 on a code that is not six digits", async () => {
     const { app } = await server();
 
@@ -272,6 +294,65 @@ describe("POST /access-request/verify", () => {
   });
 });
 
+describe("what the server builds for itself", () => {
+  /** The ports a test must hold, and neither the token signer nor the wrong-code counter. */
+  const wired = (env: NodeJS.ProcessEnv) =>
+    buildServer(loadConfig({ NODE_ENV: "test", ...env }), {
+      mailer: fakeMailer().mailer,
+      repository: fakeRepository().repository,
+      clock: fixedClock(AT),
+      codeGenerator: fixedCodeGenerator(CODE),
+      sendBudget: { reserve: () => Promise.resolve(true) },
+      // prettier-ignore
+      destinationEmail: "__MKTRUE_OWNER__@example.com",
+    });
+
+  const start = async (app: FastifyInstance, email: string) =>
+    (await app.inject({ method: "POST", url: "/access-request/start", payload: { email } })).json<{
+      token: string;
+    }>().token;
+
+  const verify = async (app: FastifyInstance, token: string, code: string) =>
+    (await app.inject({ method: "POST", url: "/access-request/verify", payload: { token, code } }))
+      .statusCode;
+
+  it("signs with the configured secret, and refuses a token the unconfigured fallback signed", async () => {
+    const configuredSecret = "s".repeat(32);
+    const fallback = createHmacTokenSigner("development-only-unsafe-secret");
+    const request = { email: "marta@example.com" };
+    const exp = AT.getTime() + 60_000;
+    const forged = fallback.sign({ request, codeMac: fallback.sealCode(CODE, request, exp), exp });
+    const configured = await wired({ ACCESS_REQUEST_TOKEN_SECRET: configuredSecret });
+
+    // The forged token is a whole one: a server with no secret of its own takes it.
+    expect(await verify(await wired({}), forged, CODE)).toBe(200);
+    expect(await verify(configured, forged, CODE)).toBe(400);
+
+    const issued = await start(configured, request.email);
+    expect(createHmacTokenSigner(configuredSecret).verify(issued)).not.toBeNull();
+    expect(fallback.verify(issued)).toBeNull();
+    expect(await verify(configured, issued, CODE)).toBe(200);
+  });
+
+  it("counts wrong codes for as many tokens as the replay memory holds, and for no more", async () => {
+    const config = { DAILY_SEND_LIMIT: "2" };
+    const app = await wired(config);
+    const tokens: string[] = [];
+    for (const who of ["ana", "bea", "cai", "dov"]) {
+      tokens.push(await start(app, `${who}@example.com`));
+    }
+    const [first = "", second = "", third = "", fourth = ""] = tokens;
+
+    expect(loadConfig(config).verificationMemory).toBe(3);
+    for (const token of [first, second, third])
+      expect(await verify(app, token, "000000")).toBe(400);
+
+    // The fourth has no place, so its right code is refused; the third has one, and is not.
+    expect(await verify(app, fourth, CODE)).toBe(400);
+    expect(await verify(app, third, CODE)).toBe(200);
+  });
+});
+
 describe("GET /health", () => {
   it("reports status without counting anything personal", async () => {
     const { app } = await server();
@@ -279,54 +360,5 @@ describe("GET /health", () => {
 
     expect(res.statusCode).toBe(200);
     expect(Object.keys(res.json())).toEqual(["status", "version", "commit"]);
-  });
-});
-
-describe("logging", () => {
-  it("redacts an address and a token digest out of a failed claim", async () => {
-    // Mongo's errors quote the values they failed on. Passing one straight to the logger writes a
-    // requester's address into the log — the one leak that arrives through a path that looks safe,
-    // because the seam's `code` argument is already fixed. The claim query filters on both
-    // the address *and* the token digest, so a driver error can now carry either, and the digest
-    // identifies one person's request as precisely as the address does.
-    //
-    // The rejection below is shaped like a real one on purpose: an assertion against
-    // `new Error("mongo is down")` would pass against an implementation that logged the lot.
-    const digest = "a3f1".repeat(16);
-    const lines: string[] = [];
-    const { mailer } = fakeMailer();
-    const app = await buildServer(loadConfig({ NODE_ENV: "test" }), {
-      mailer,
-      clock: fixedClock(AT),
-      codeGenerator: fixedCodeGenerator(CODE),
-      tokenSigner: createHmacTokenSigner("test-secret"),
-      // prettier-ignore
-      destinationEmail: "__MKTRUE_OWNER__@example.com",
-      repository: unavailableRepository(
-        new Error(
-          "E11000 duplicate key error collection: __MKTRUE_NAME__.access_requests " +
-            `dup key: { email: "marta@example.com", tokenDigests: "${digest}" }`,
-        ),
-      ),
-    });
-    app.log.error = ((obj: unknown) => {
-      lines.push(JSON.stringify(obj));
-    }) as typeof app.log.error;
-
-    const started = await app.inject({
-      method: "POST",
-      url: "/access-request/start",
-      payload: { email: "marta@example.com" },
-    });
-    await app.inject({
-      method: "POST",
-      url: "/access-request/verify",
-      payload: { token: started.json<{ token: string }>().token, code: CODE },
-    });
-
-    expect(lines.join(" ")).not.toContain("marta@example.com");
-    expect(lines.join(" ")).not.toContain(digest);
-    expect(lines.join(" ")).toContain("[address]");
-    expect(lines.join(" ")).toContain("[digest]");
   });
 });

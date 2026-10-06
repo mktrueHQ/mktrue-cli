@@ -63,6 +63,8 @@ const REQUIRED_IN_PRODUCTION = [
   "ACCESS_REQUEST_TOKEN_SECRET",
 ] as const;
 
+const MIN_TOKEN_SECRET_LENGTH = 32;
+
 export interface ApiConfig {
   readonly port: number;
   readonly host: string;
@@ -135,6 +137,18 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     if (missing.length > 0) {
       throw new Error(
         `refusing to boot: these are required in production and are blank — ${missing.join(", ")}`,
+      );
+    }
+  }
+
+  // The secret signs every token and seals every code, so wherever real mail is sent it is a real
+  // secret, whatever NODE_ENV says: a blank one falls back to a constant anyone can read. The value
+  // is never part of the message.
+  if (blankToUndefined(env.RESEND_API_KEY) !== undefined) {
+    const secret = blankToUndefined(env.ACCESS_REQUEST_TOKEN_SECRET) ?? "";
+    if (secret.length < MIN_TOKEN_SECRET_LENGTH) {
+      throw new Error(
+        `refusing to boot: ACCESS_REQUEST_TOKEN_SECRET must be at least ${MIN_TOKEN_SECRET_LENGTH} characters when RESEND_API_KEY is set`,
       );
     }
   }

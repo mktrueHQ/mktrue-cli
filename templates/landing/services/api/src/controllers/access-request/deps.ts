@@ -6,6 +6,7 @@ import type {
   Mailer,
   SendBudget,
   TokenSigner,
+  WrongCodeCounter,
 } from "../../contexts/access-request/application/ports";
 
 /** Everything the two routes need, injected — so a test can drive them without Mongo or Resend. */
@@ -20,5 +21,6 @@ export interface AccessRequestRouteDeps {
   readonly dailySendLimit: number;
   /** How many token digests a mailbox row remembers — sized in `config.ts`. */
   readonly verificationMemory: number;
+  readonly wrongCodes: WrongCodeCounter;
   readonly destinationEmail: string;
 }

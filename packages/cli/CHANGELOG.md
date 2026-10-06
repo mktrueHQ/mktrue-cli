@@ -1,5 +1,11 @@
 # mktrue
 
+## 1.1.1
+
+### Patch Changes
+
+- b272e1f: Security fix in the `landing` template: the token a browser holds no longer carries a hash of the mailed code, which let anyone recover the code and verify an address they do not own. Five wrong codes now kill a token, errors answer with fixed bodies, the request log drops the query, IPv6 clients are limited by /64, and the API does not boot with a token secret under 32 characters wherever `RESEND_API_KEY` is set. `mktrue sync` does not carry template files: a landing made with 1.1.0 or earlier needs the same change by hand, described in decision 0040.
+
 ## 1.1.0
 
 ### Minor Changes

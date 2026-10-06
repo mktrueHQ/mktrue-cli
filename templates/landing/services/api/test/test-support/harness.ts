@@ -5,6 +5,7 @@ import type {
   Mailer,
 } from "../../src/contexts/access-request/application/ports";
 import { createHmacTokenSigner } from "../../src/contexts/access-request/infrastructure/hmac-token-signer";
+import { createInMemoryWrongCodeCounter } from "../../src/contexts/access-request/infrastructure/in-memory-wrong-code-counter";
 import {
   fakeMailer,
   fakeRepository,
@@ -33,6 +34,8 @@ export interface HarnessOverrides {
   readonly repository?: AccessRequestRepository;
   /** When set, the delivery to __MKTRUE_OWNER__ rejects with this while the code mail still sends. */
   readonly deliveryFails?: Error;
+  /** How many tokens the wrong-code counter holds. The replay memory's size, when left out. */
+  readonly countedTokens?: number;
 }
 
 /** The whole flow against fakes: one address, one code, one clock a test can move. */
@@ -52,6 +55,7 @@ export function harness(overrides: HarnessOverrides = {}) {
   const clock = fixedClock(AT);
   const tokenSigner = createHmacTokenSigner("test-secret");
   const { budget, days } = fakeSendBudget();
+  const wrongCodes = createInMemoryWrongCodeCounter(overrides.countedTokens ?? VERIFICATION_MEMORY);
 
   return {
     sent: base.sent,
@@ -85,6 +89,7 @@ export function harness(overrides: HarnessOverrides = {}) {
           logger,
           destinationEmail: DESTINATION,
           verificationMemory: VERIFICATION_MEMORY,
+          wrongCodes,
         },
       ),
   };

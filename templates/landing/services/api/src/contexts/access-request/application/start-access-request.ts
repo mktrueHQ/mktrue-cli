@@ -71,9 +71,12 @@ export async function startAccessRequest(
 
   await deps.mailer.sendVerificationCode({ to: request.email, code: code.value });
 
+  const fields = request.toJSON();
+  const exp = deps.clock.now().getTime() + CODE_VALIDITY_MS;
+
   return deps.tokenSigner.sign({
-    request: request.toJSON(),
-    codeHash: code.hash(),
-    exp: deps.clock.now().getTime() + CODE_VALIDITY_MS,
+    request: fields,
+    codeMac: deps.tokenSigner.sealCode(code.value, fields, exp),
+    exp,
   });
 }

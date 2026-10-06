@@ -55,8 +55,8 @@ describe("replaying a verification", () => {
 
   it("delivers again for a genuine second request with a new token", async () => {
     // The test that protects what the fix could break. Both tokens carry the same address and, with
-    // a fixed code generator, the same `codeHash`; only `exp` differs. That is precisely why the
-    // marker is a digest of the whole token: digesting the code hash would make these two requests
+    // a fixed code generator, the same code; only `exp` differs. That is precisely why the marker
+    // is a digest of the whole token: a marker made from the code would make these two requests
     // indistinguishable and silently swallow the second one.
     const h = harness();
     await h.verify(await h.start(), CODE);
@@ -153,8 +153,8 @@ describe("replaying a verification", () => {
 
   it("reports a failed claim by its code, and builds no message of its own", async () => {
     // The seam takes a fixed code precisely so a caller cannot slip an address into it. What the
-    // *error object* carries is redacted one layer out, in `safeErrorSummary` — proved end to end
-    // in `test/controllers/access-request.test.ts`, which is the only place redaction happens.
+    // *error object* carries is cut down to a name and a code one layer out, in `safeErrorSummary`
+    // — proved end to end in `test/controllers/logging.test.ts`.
     const h = harness({
       repository: unavailableRepository(
         new Error('dup key: { email: "marta@example.com" } while claiming'),

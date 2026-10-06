@@ -25,7 +25,7 @@ import { loadRepo } from "./repo.js";
 import { clip, columns, errorCode, internalError, refuse, setColumns } from "./report.js";
 import { refuseUnsafeShell, UnsafeShellArgument } from "./spawn.js";
 
-export const KIT_VERSION = "1.1.0";
+export const KIT_VERSION = "1.1.1";
 
 /** The exit for whatever `main` throws: a refused shell argument is exit 3, anything else a crash. */
 export function exitOnThrow(out: Output, error: unknown): ExitCode {
