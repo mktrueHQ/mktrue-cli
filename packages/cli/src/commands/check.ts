@@ -167,7 +167,7 @@ export function runGates(repo: Repo, kitVersion: string): GateRun {
             current: repo.settings.get(target.settings),
             linkedOutside: repo.settingsLinkedOutside.has(target.settings),
           }),
-        (r) => `${r.present} of ${r.rules} deny rules`,
+        (r) => `${r.present} of ${r.rules} deny rules · ${r.hooksPresent} of ${r.hooks} hooks`,
       );
     }
     gate(

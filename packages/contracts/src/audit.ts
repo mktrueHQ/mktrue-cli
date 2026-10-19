@@ -42,8 +42,10 @@ const toolUseEventSchema = z
     name: z.string(),
     filePath: z.string().optional(),
     gates: z.array(z.string()).optional(),
+    testRun: z.object({ package: z.string().optional() }).strict().optional(),
     slice: z.string().optional(),
     role: z.string().optional(),
+    statedRole: z.string().optional(),
     subagentType: z.string().optional(),
   })
   .strict();
@@ -85,6 +87,7 @@ const spawnEventSchema = z
     toolUseId: z.string(),
     slice: z.string(),
     role: z.string().optional(),
+    statedRole: z.string().optional(),
     subagentType: z.string().optional(),
   })
   .strict();
@@ -143,12 +146,23 @@ const distributionSchema = z
   })
   .strict();
 
+const instant = z.string().datetime().nullable();
+
 const callsBeforeAfterSchema = z.object({ calls: count, finalContext: count }).strict();
+
+export const SUBAGENT_ONLY = [
+  "slices",
+  "totals.agents",
+  "totals.slices",
+  "totals.finalContextSum",
+] as const;
 
 export const auditReportSchema = z
   .object({
-    schema: z.literal(1),
+    schema: z.literal(3),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    window: z.object({ since: instant, until: instant }).strict(),
+    subagentOnly: z.array(z.enum(SUBAGENT_ONLY)),
     reader: z
       .object({
         id: z.string(),
@@ -200,6 +214,7 @@ export const auditReportSchema = z
           sessionId: z.string(),
           slice: z.string().nullable(),
           role: z.string(),
+          statedRole: z.string().nullable(),
           model: z.string().nullable(),
           calls: count,
           finalContext: count,
@@ -221,6 +236,20 @@ export const auditReportSchema = z
         .strict(),
     ),
     gateRuns: z.array(z.object({ gate: z.string(), runs: count }).strict()),
+    testRuns: z
+      .object({
+        runs: count,
+        packages: z.array(z.object({ package: z.string(), runs: count }).strict()),
+      })
+      .strict(),
+    merged: z
+      .object({
+        base: z.string(),
+        pullRequests: count,
+        processedPerPullRequest: count.nullable(),
+      })
+      .strict()
+      .nullable(),
     slices: z.array(
       z
         .object({
@@ -232,9 +261,30 @@ export const auditReportSchema = z
           reReads: count,
           gateRuns: count,
           resumes: count,
+          bound: count.nullable(),
         })
         .strict(),
     ),
+    shape: z
+      .object({
+        runs: count,
+        noRole: count,
+        noRolePercent: count.nullable(),
+        invented: z.array(z.object({ role: z.string(), runs: count }).strict()),
+        modelMismatches: z.array(
+          z
+            .object({
+              agentId: z.string(),
+              slice: z.string().nullable(),
+              role: z.string(),
+              expected: z.string(),
+              model: z.string(),
+            })
+            .strict(),
+        ),
+        overBound: z.array(z.object({ slice: z.string(), runs: count, bound: count }).strict()),
+      })
+      .strict(),
     totals: z
       .object({
         agents: count,
@@ -244,6 +294,8 @@ export const auditReportSchema = z
         resumes: count,
         reReads: count,
         gateRuns: count,
+        processed: processedSchema,
+        processedTokens: count,
       })
       .strict(),
   })

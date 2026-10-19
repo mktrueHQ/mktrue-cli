@@ -4,6 +4,7 @@ export {
   auditReportSchema,
   readerEventSchema,
   readerTallySchema,
+  SUBAGENT_ONLY,
 } from "./audit.js";
 export type {
   AuditEvent,
@@ -45,6 +46,9 @@ export {
   portSchema,
 } from "./config.js";
 export type { Answers, Budgets, MktrueConfig } from "./config.js";
+
+export { contextBudgetsSchema, hookInputSchema } from "./guard.js";
+export type { ContextBudgets, HookInput } from "./guard.js";
 
 export {
   MAX_TRANSFORM_BACKTRACK,

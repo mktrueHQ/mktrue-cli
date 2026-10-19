@@ -2,23 +2,25 @@ import type { Budgets } from "@mktrue/contracts";
 
 import { EXIT, type Finding } from "./findings.js";
 
+export type DocumentKind = Exclude<keyof Budgets, "context">;
+
 export interface Document {
   readonly path: string;
   readonly content: string;
-  readonly kind: keyof Budgets;
+  readonly kind: DocumentKind;
 }
 
 export function characterCount(content: string): number {
   return [...content].length;
 }
 
-const WHY: Record<keyof Budgets, string> = {
+const WHY: Record<DocumentKind, string> = {
   rules: "the rules file is read on every agent turn; state goes in docs/STATE.md",
   state: "the state file is replaced at every close; if it grows it has become a changelog",
   decision: "a decision is read whole when it is cited; past this size nobody reads it",
 };
 
-const FIX: Record<keyof Budgets, string> = {
+const FIX: Record<DocumentKind, string> = {
   rules: "move what is dated or in flight to docs/STATE.md, or raise budgets.rules",
   state: "move what already happened into docs/log/, or raise the budget in .mktrue.json",
   decision: "split it into the decisions it actually contains, one per file",

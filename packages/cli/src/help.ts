@@ -10,14 +10,17 @@ export const OPTIONS = {
   answers: { type: "string" },
   offline: { type: "boolean", default: false },
   out: { type: "string" },
+  since: { type: "string" },
+  until: { type: "string" },
   json: { type: "boolean", default: false },
   siblings: { type: "boolean", default: false },
+  resume: { type: "boolean", default: false },
   help: { type: "boolean", default: false },
 } as const;
 
 export type OptionName = keyof typeof OPTIONS;
 
-export const COMMANDS = ["doctor", "new", "check", "sync", "import", "audit"] as const;
+export const COMMANDS = ["doctor", "new", "check", "sync", "import", "audit", "guard"] as const;
 
 export type Command = (typeof COMMANDS)[number];
 
@@ -32,7 +35,8 @@ export const COMMAND_FLAGS: Record<Command, readonly OptionName[]> = {
   check: ["siblings", "json", "target", "bench"],
   sync: ["write", "adopt", "restore", "target", "bench"],
   import: ["from", "template", "write", "adopt-template"],
-  audit: ["out", "json"],
+  audit: ["out", "json", "since", "until"],
+  guard: ["resume"],
 };
 
 export const USAGE = `mktrue <command>
@@ -54,11 +58,14 @@ export const USAGE = `mktrue <command>
   sync --restore   put back a kit-owned file this repository deleted
   import           lift a template's files out of a product; a dry run
                    unless --write
-  audit [--out <file>] [--json]
+  audit [--out <file>] [--json] [--since <date>] [--until <date>]
                    measure this repository's local Claude Code transcripts
                    into one HTML report; sends nothing. --json prints the
-                   report to stdout and writes no file
+                   report to stdout and writes no file; --since and --until
+                   keep the days from one local midnight to another
   import --adopt-template  record the template's baseline; writes no file
+  guard [--resume] the Claude Code hook that holds the context budget; reads
+                   the hook's JSON on stdin and sends nothing
 
   --from <dir>     the product to import from, under the method (import)
   --template <n>   the template to import into (import)
@@ -197,7 +204,7 @@ export const HELP: Record<Command, string> = {
     4  a decision is needed: a file has no baseline, or changed on both
        sides
 `,
-  audit: `mktrue audit [--out <file>] [--json]
+  audit: `mktrue audit [--out <file>] [--json] [--since <date>] [--until <date>]
 
   Measure what this repository's agent sessions cost. audit reads the local
   Claude Code transcripts of this repository and its worktrees and writes
@@ -208,13 +215,35 @@ export const HELP: Record<Command, string> = {
                      <git common dir>/mktrue/audit-<date>.html)
     --json           print the report to stdout as JSON and write no file;
                      not with --out
+    --since <date>   keep records from this day's local midnight, YYYY-MM-DD
+    --until <date>   keep records before this day's local midnight; merged
+                     pull requests are counted in the same window
     --help           this screen
 
   exit codes
     0  a report was produced
     2  usage: an argument, --out with --json, --out naming a link or a
-       directory, or not inside a git repository
+       directory, a date that is not YYYY-MM-DD, --since not before
+       --until, or not inside a git repository
     3  no transcripts for this repository, or the report could not be
        written
+`,
+  guard: `mktrue guard [--resume]
+
+  The Claude Code hook that holds the context budget. Run as a PreToolUse
+  hook, guard reads the hook's JSON on stdin, the last usage record of the
+  session's transcript and the budgets in .mktrue.json, and prints the
+  hook's JSON: nothing under budget, a warning at it, a refusal past the
+  ceiling. It reads usage fields and counts calls only, writes nothing and
+  sends nothing. Without .mktrue.json, or with nothing to measure, it
+  prints nothing and the call goes ahead.
+
+  flags
+    --resume         run as the SessionStart hook on clear: put the newest
+                     .mktrue/slices/<id>/resume.md in context
+    --help           this screen
+
+  exit codes
+    0  always: a refusal is the JSON it prints, never an exit code
 `,
 };

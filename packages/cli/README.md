@@ -78,6 +78,7 @@ Then open Claude Code in `./ledger` and run:
 | `mktrue check --siblings` | Also compare the repositories this one names as siblings, through local git. |
 | `mktrue sync [--write]` | Bring the method up to date, and write the settings file when there is none. A dry run unless `--write`. |
 | `mktrue audit` | Measure this repository's local Claude Code transcripts into one HTML report. |
+| `mktrue guard [--resume]` | The Claude Code hook the settings file runs: it warns a session at its context budget and refuses calls past the ceiling. Reads usage fields only and sends nothing. |
 | `mktrue import` | Lift a template's files out of a product. For maintaining the kit, not a product. |
 
 `mktrue <command> --help` prints that command's flags and exit codes. Exit codes are a contract: `0` true, `1` findings, `2` usage, `3` environment, `4` a decision is needed.

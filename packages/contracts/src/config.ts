@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { relativePathSchema } from "./bench.js";
+import { contextBudgetsSchema } from "./guard.js";
 
 const documentPathSchema = z.union([relativePathSchema, z.literal("")]);
 
@@ -117,6 +118,7 @@ export const budgetsSchema = z.object({
   rules: z.number().int().positive(),
   state: z.number().int().positive(),
   decision: z.number().int().positive(),
+  context: contextBudgetsSchema.optional(),
 });
 
 export const ownedSchema = z.record(

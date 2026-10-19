@@ -49,6 +49,7 @@ export const roleSchema = z.object({
   effort: z.union([z.string().min(1), z.number().int().positive()]).optional(),
   slots: z.array(slotKeySchema),
   report: z.string().min(1),
+  runsPerSlice: z.number().int().positive().optional(),
 });
 
 export const commandSchema = z.object({

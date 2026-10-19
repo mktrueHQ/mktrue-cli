@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "1.1.1",
+  "version": "1.2.0",
   "slotSyntax": "__MKTRUE_<KEY>__",
   "slots": {
     "NAME": {
@@ -172,7 +172,8 @@
       "model": "opus",
       "effort": "high",
       "slots": ["NAME", "AUDIENCE_TEST", "LANGUAGES"],
-      "report": "<slice folder>/ui-engineer.md"
+      "report": "<slice folder>/ui-engineer.md",
+      "runsPerSlice": 5
     },
     {
       "id": "security-auditor",

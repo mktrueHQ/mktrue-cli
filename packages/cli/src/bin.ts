@@ -13,6 +13,7 @@ import {
   processInterruptGuard,
   terminalOutput,
 } from "./adapters.js";
+import { nodeGuardPorts } from "./guard-io.js";
 import { exitOnThrow, main } from "./main.js";
 import { templatesPnpmPin } from "./pnpm-pin.js";
 import { runningFile, selfLayout } from "./self.js";
@@ -39,9 +40,11 @@ const start = async (): Promise<number> => {
       runner: nodeRunner(process.cwd()),
       pnpmRunner: pnpmProbeRunner(templatesPnpmPin()),
       machine: nodeMachine(bundlePath),
+      repository: (top) => nodeFileSystem(top),
     },
     nodeAuditPorts(process.cwd()),
     nodeSiblingPorts(process.cwd()),
+    nodeGuardPorts(),
   );
 };
 

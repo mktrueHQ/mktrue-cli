@@ -29,3 +29,27 @@ export function pnpmPin(packageJson: string): string | undefined {
   if (typeof value !== "string") return undefined;
   return /^pnpm@(\d+\.\d+\.\d+)/u.exec(value)?.[1];
 }
+
+/** The `name` a role file's frontmatter gives, or undefined when it has none. */
+export function roleFileName(text: string): string | undefined {
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(text)?.[1];
+  if (frontmatter === undefined) return undefined;
+  for (const line of frontmatter.split(/\r?\n/u)) {
+    const value = /^name:[ \t]*(.*?)[ \t]*$/u.exec(line)?.[1];
+    if (value === undefined) continue;
+    const name = value.replace(/^(["'])(.*)\1$/u, "$2");
+    return name === "" ? undefined : name;
+  }
+  return undefined;
+}
+
+/** Every role whose file is missing, or whose frontmatter does not name it. */
+export function missingRoleFiles(
+  roles: readonly string[],
+  files: ReadonlyMap<string, string | undefined>,
+): string[] {
+  return roles.filter((role) => {
+    const text = files.get(role);
+    return text === undefined || roleFileName(text) !== role;
+  });
+}

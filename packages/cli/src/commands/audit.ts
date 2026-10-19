@@ -13,6 +13,7 @@ import {
   mktrueConfigSchema,
   readerEventSchema,
   type AuditEvent,
+  type AuditReport,
   type ReaderEvent,
   type ReaderTally,
   type SpawnEvent,
@@ -21,18 +22,26 @@ import {
   DEFAULT_GATES,
   EXIT,
   auditMetrics,
+  eventInWindow,
   renderAuditHtml,
+  testRunOf,
+  type AuditMerged,
   type AuditTranscript,
   type AuditTree,
+  type AuditWindow,
   type ExitCode,
 } from "@mktrue/core";
 
+import { isSafeRef } from "../git.js";
 import type { AuditPorts, Output, TranscriptEntry, TranscriptStore } from "../ports.js";
 import { columns, clip, errorCode, printable, refuse } from "../report.js";
+import { embeddedManifest } from "../repo.js";
 
 export interface AuditOptions {
   readonly out: string | undefined;
   readonly json: boolean;
+  readonly since?: string | undefined;
+  readonly until?: string | undefined;
 }
 
 const WORKTREE_DIR_SUFFIX = "--claude-worktrees-";
@@ -67,6 +76,7 @@ interface Scan {
   readonly trees: readonly AuditTree[];
   readonly gates: readonly string[];
   readonly common: string;
+  readonly window: AuditWindow;
 }
 
 interface Rejected {
@@ -230,13 +240,20 @@ function spawnOf(meta: unknown): string | undefined {
   return typeof toolUseId === "string" ? toolUseId : undefined;
 }
 
-function claimedSpawn({ toolUseId, slice, role, subagentType }: SpawnEvent): AuditEvent {
+function claimedSpawn({
+  toolUseId,
+  slice,
+  role,
+  statedRole,
+  subagentType,
+}: SpawnEvent): AuditEvent {
   return {
     kind: "tool_use",
     name: "Agent",
     toolUseId,
     slice,
     ...(role === undefined ? {} : { role }),
+    ...(statedRole === undefined ? {} : { statedRole }),
     ...(subagentType === undefined ? {} : { subagentType }),
   };
 }
@@ -252,7 +269,7 @@ async function readTranscript(
   const claim = toolUseId === undefined ? undefined : claims.get(toolUseId);
   const keep = claim === undefined ? (cwd: string) => isKept(cwd, scan.trees) : undefined;
   const lines = walk.store.lines(file.path);
-  const reader = readClaudeCode(lines, meta, scan.gates, keep, scan.common);
+  const reader = readClaudeCode(lines, meta, scan.gates, keep, scan.common, testRunOf);
   const events: AuditEvent[] = [];
   const spawns: SpawnEvent[] = [];
   const uuids = new Set<string>();
@@ -281,6 +298,7 @@ async function readTranscript(
       spawns.push(event);
       continue;
     }
+    if (!eventInWindow(event, scan.window)) continue;
     events.push(event);
     if (event.kind === "meta") continue;
     if (event.uuid === undefined) records += 1;
@@ -315,18 +333,97 @@ function compareVersions(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
-async function gatesOf(ports: AuditPorts, top: string): Promise<readonly string[]> {
+const DEFAULT_BASE = "main";
+
+async function configOf(
+  ports: AuditPorts,
+  top: string,
+): Promise<{ gates: readonly string[]; base: string | undefined }> {
   const text = await ports.store.readSmall(join(top, ".mktrue.json"));
-  if (text === undefined) return DEFAULT_GATES;
+  if (text === undefined) return { gates: DEFAULT_GATES, base: DEFAULT_BASE };
   try {
-    const raw = JSON.parse(text) as { gates?: unknown };
+    const raw = JSON.parse(text) as { gates?: unknown; baseBranch?: unknown };
     const gates = mktrueConfigSchema.shape.gates.safeParse(raw.gates);
-    return gates.success && gates.data !== undefined && gates.data.length > 0
-      ? gates.data
-      : DEFAULT_GATES;
+    const base = mktrueConfigSchema.shape.baseBranch.optional().safeParse(raw.baseBranch);
+    return {
+      gates:
+        gates.success && gates.data !== undefined && gates.data.length > 0
+          ? gates.data
+          : DEFAULT_GATES,
+      base: base.success ? (base.data ?? DEFAULT_BASE) : undefined,
+    };
   } catch {
-    return DEFAULT_GATES;
+    return { gates: DEFAULT_GATES, base: DEFAULT_BASE };
   }
+}
+
+async function mergedOf(
+  ports: AuditPorts,
+  base: string | undefined,
+): Promise<AuditMerged | "not a branch" | "unread"> {
+  if (base === undefined) return "not a branch";
+  for (const [ref, shown] of [
+    [`refs/remotes/origin/${base}`, `origin/${base}`],
+    [`refs/heads/${base}`, base],
+  ] as const) {
+    if (!isSafeRef(ref)) return "not a branch";
+    const commit = await ports.runner.probe([
+      "git",
+      "rev-parse",
+      "--verify",
+      "--quiet",
+      `${ref}^{commit}`,
+    ]);
+    if (commit === undefined) continue;
+    const log = await ports.runner.probe([
+      "git",
+      "log",
+      "--first-parent",
+      "--format=%ct",
+      ref,
+      "--",
+    ]);
+    if (log === undefined) return "unread";
+    const committed = log
+      .split("\n")
+      .filter((line) => /^\d+$/.test(line))
+      .map((line) => Number(line) * 1000);
+    return { base: shown, committed };
+  }
+  return "unread";
+}
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function windowOf(ports: AuditPorts, out: Output, options: AuditOptions): AuditWindow | ExitCode {
+  const bounds: { since?: number; until?: number } = {};
+  for (const flag of ["since", "until"] as const) {
+    const typed = options[flag];
+    if (typed === undefined) continue;
+    const instant = DATE.test(typed) ? ports.localMidnight(typed) : undefined;
+    if (instant === undefined) {
+      return refuse(
+        out,
+        "usage",
+        `--${flag} is not a date: ${clip(printable(typed), 24)}`,
+        "the window runs from one local midnight to another, so it needs a day",
+        `pass --${flag} YYYY-MM-DD, for example --${flag} 2026-10-12`,
+        EXIT.USAGE,
+      );
+    }
+    bounds[flag] = instant;
+  }
+  if (bounds.since !== undefined && bounds.until !== undefined && bounds.since >= bounds.until) {
+    return refuse(
+      out,
+      "usage",
+      "--since is not before --until",
+      "the window keeps --since and drops --until, so it would hold nothing",
+      "pass a --since day earlier than the --until day",
+      EXIT.USAGE,
+    );
+  }
+  return bounds;
 }
 
 function shownTarget(
@@ -393,6 +490,28 @@ function refuseEvent(out: Output, { rejected }: Rejected): ExitCode {
   );
 }
 
+export function shapeLines(shape: AuditReport["shape"]): string[] {
+  const share = shape.noRolePercent === null ? "" : ` · ${shape.noRolePercent}%`;
+  const lines = [`mktrue: no role · ${shape.noRole} of ${shape.runs} runs${share}`];
+  if (shape.invented.length > 0) {
+    const names = shape.invented.map((row) => `${printable(row.role)} ${row.runs}`).join(", ");
+    lines.push(`mktrue: invented roles · ${shape.invented.length} · ${names}`);
+  }
+  if (shape.modelMismatches.length > 0) {
+    const roles = [...new Set(shape.modelMismatches.map((m) => printable(m.role)))].join(", ");
+    const n = shape.modelMismatches.length;
+    lines.push(`mktrue: model mismatches · ${n} ${n === 1 ? "run" : "runs"} · ${roles}`);
+  }
+  if (shape.overBound.length > 0) {
+    const slices = shape.overBound
+      .map((o) => `${printable(o.slice)} ${o.runs} of ${o.bound}`)
+      .join(", ");
+    const n = shape.overBound.length;
+    lines.push(`mktrue: over the bound · ${n} ${n === 1 ? "slice" : "slices"} · ${slices}`);
+  }
+  return lines;
+}
+
 export async function runAudit(
   ports: AuditPorts,
   out: Output,
@@ -408,6 +527,9 @@ export async function runAudit(
       EXIT.USAGE,
     );
   }
+
+  const window = windowOf(ports, out, options);
+  if (typeof window === "number") return window;
 
   const commonDir = await ports.runner.probe([
     "git",
@@ -428,7 +550,7 @@ export async function runAudit(
   }
 
   const trees = await findTrees(ports, top);
-  const gates = await gatesOf(ports, top);
+  const { gates, base } = await configOf(ports, top);
   const projects = join(ports.configDir(), "projects");
   const root = await ports.store.realPath(projects);
   const dirs = root === undefined ? [] : await findProjectDirs(ports.store, projects, trees);
@@ -444,7 +566,7 @@ export async function runAudit(
   }
 
   const walk: Walk = { store: ports.store, root, outsideRoot: 0, unreadable: 0 };
-  const scan: Scan = { trees, gates, common: commonDir };
+  const scan: Scan = { trees, gates, common: commonDir, window };
   const reads: Read[] = [];
   let dirsRead = 0;
   for (const dir of dirs) {
@@ -479,6 +601,16 @@ export async function runAudit(
   }
 
   const recordsKept = reads.reduce((total, r) => total + r.records, 0);
+  if (recordsKept === 0 && (window.since !== undefined || window.until !== undefined)) {
+    return refuse(
+      out,
+      "environment",
+      "no transcript record of this repository falls in the window",
+      "every record kept was made before --since or from --until on",
+      "widen the window, or check the dates",
+      EXIT.ENVIRONMENT,
+    );
+  }
   if (recordsKept === 0) {
     return refuse(
       out,
@@ -490,6 +622,7 @@ export async function runAudit(
     );
   }
 
+  const merged = await mergedOf(ports, base);
   const report = auditReportSchema.parse(
     withoutC1(
       auditMetrics(
@@ -498,6 +631,7 @@ export async function runAudit(
         gates,
         {
           date: ports.today(),
+          roles: embeddedManifest().roles,
           scope: {
             dirsRead,
             filesRead: reads.length,
@@ -514,6 +648,8 @@ export async function runAudit(
             linesNotUnderstood: tally.linesNotUnderstood,
             versionsSeen: tally.versions,
           },
+          window,
+          ...(typeof merged === "string" ? {} : { merged }),
         },
       ),
     ),
@@ -564,7 +700,34 @@ export async function runAudit(
     `mktrue: resumes · ${totals.resumes}`,
     `mktrue: re-reads · ${totals.reReads} · ${report.reReads.characters} characters`,
     `mktrue: gate runs · ${totals.gateRuns}`,
+    ...shapeLines(report.shape),
   ];
+  if (options.since !== undefined || options.until !== undefined) {
+    lines.unshift(
+      `mktrue: window · ${options.since ?? "start"} to ${options.until ?? "now"} · local time, until excluded`,
+    );
+  }
+  const named = report.testRuns.packages.length;
+  lines.push(
+    `mktrue: processed · ${totals.processedTokens} tokens · lead and subagents`,
+    `mktrue: test runs · ${report.testRuns.runs} · ${named} ${named === 1 ? "package" : "packages"} named`,
+  );
+  const { merged: pulls } = report;
+  if (merged === "not a branch") {
+    lines.push("mktrue: merged · not counted · baseBranch in .mktrue.json is not a branch name");
+  } else if (pulls === null) {
+    lines.push(
+      `mktrue: merged · not counted · git could not read branch ${clip(printable(base ?? ""), 23)}`,
+    );
+  } else {
+    const each =
+      pulls.processedPerPullRequest === null
+        ? ""
+        : ` · ${pulls.processedPerPullRequest} tokens each`;
+    lines.push(
+      `mktrue: merged · ${pulls.pullRequests} pull requests on ${clip(printable(pulls.base), 16)}${each}`,
+    );
+  }
   if (report.reader.linesNotUnderstood > 0) {
     lines.push(
       `mktrue: read with ${READER_ID}, tested to ${TESTED_TO} · ${report.reader.linesNotUnderstood} lines not understood`,

@@ -629,6 +629,18 @@ export function localDate(now: Date = new Date()): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+export function localMidnight(date: string): number | undefined {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (parts === null) return undefined;
+  const [year, month, day] = [Number(parts[1]), Number(parts[2]) - 1, Number(parts[3])];
+  const midnight = new Date(year, month, day);
+  return midnight.getFullYear() === year &&
+    midnight.getMonth() === month &&
+    midnight.getDate() === day
+    ? midnight.getTime()
+    : undefined;
+}
+
 export const sanitizeAnswer = printable;
 
 const PAD_WIDTH = Math.max(...questionsFor("application").map((q) => q.label.length)) + 1;
@@ -817,6 +829,7 @@ export function nodeAuditPorts(cwd: string): AuditPorts {
     store: nodeTranscriptStore(),
     configDir: () => configDirFrom(process.env),
     today: () => localDate(),
+    localMidnight,
     cwd: resolve(cwd),
     async targetKind(path) {
       try {

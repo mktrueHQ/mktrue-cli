@@ -5,6 +5,7 @@ import {
   REQUIRED_PNPM,
   exitCodeFor,
   isOneMillionModel,
+  missingRoleFiles,
   nodeSatisfies,
   pnpmSatisfies,
   type ExitCode,
@@ -15,6 +16,10 @@ import { checkEnvironment } from "../environment.js";
 import { templatesPnpmPin } from "../pnpm-pin.js";
 import type { DoctorPorts, Output } from "../ports.js";
 import { clip, columns, printable } from "../report.js";
+import { embeddedManifest } from "../repo.js";
+
+const ROLE_TARGET = "claude-code";
+const ROLE_SLOT = "__MKTRUE_ROLE_ID__";
 
 export interface DoctorOptions {
   readonly write: boolean;
@@ -229,6 +234,47 @@ async function checkModel(ports: DoctorPorts, out: Output): Promise<Finding[]> {
   return [];
 }
 
+async function readInside(
+  read: (path: string) => Promise<string | undefined>,
+  path: string,
+): Promise<string | undefined> {
+  try {
+    return await read(path);
+  } catch {
+    return undefined;
+  }
+}
+
+async function checkRoles(ports: DoctorPorts, out: Output): Promise<Finding[]> {
+  const top = await ports.runner.probe(["git", "rev-parse", "--show-toplevel"]);
+  const repository = top === undefined ? undefined : ports.repository?.(top);
+  if (repository === undefined) return [];
+  const read = (path: string) => readInside((p) => repository.read(p), path);
+  if ((await read(".mktrue.json")) === undefined) {
+    say(out, "mktrue: doctor · roles · not checked · this repository has no .mktrue.json");
+    return [];
+  }
+  const manifest = embeddedManifest();
+  const pattern = manifest.targets[ROLE_TARGET]!.roles;
+  const pathOf = (role: string) => pattern.replace(ROLE_SLOT, role);
+  const roles = manifest.roles.map((role) => role.id);
+  const files = new Map<string, string | undefined>();
+  for (const role of roles) files.set(role, await read(pathOf(role)));
+  const missing = missingRoleFiles(roles, files);
+  if (missing.length === 0) {
+    say(out, `mktrue: doctor · roles · ✓ ${roles.length} bench roles · ${dirname(pathOf(""))}`);
+    return [];
+  }
+  return missing.map((role) =>
+    doctorFinding(
+      `role ${printable(role)} has no agent file naming it`,
+      "every run is spawned with its bench role as the agent type",
+      `mktrue sync --write renders ${printable(pathOf(role))}`,
+      EXIT.FINDINGS,
+    ),
+  );
+}
+
 export async function runDoctor(
   ports: DoctorPorts,
   out: Output,
@@ -250,6 +296,7 @@ export async function runDoctor(
   await checkOptional(ports, out, "claude", "the skill");
 
   collect(await checkModel(ports, out));
+  collect(await checkRoles(ports, out));
 
   const exit = exitCodeFor(findings);
   if (exit === EXIT.TRUE) {

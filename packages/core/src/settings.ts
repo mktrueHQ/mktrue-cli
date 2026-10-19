@@ -26,10 +26,58 @@ export function denyRules(source: string): string[] | undefined {
   return deny.filter((rule): rule is string => typeof rule === "string");
 }
 
+export interface SettingsHook {
+  readonly event: string;
+  readonly matcher: string;
+  readonly command: string;
+}
+
+/** The command hooks a settings file carries, or undefined when its hooks do not parse. */
+export function hookCommands(source: string): SettingsHook[] | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(source);
+  } catch {
+    return undefined;
+  }
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+  const hooks = (parsed as { hooks?: unknown }).hooks;
+  if (hooks === undefined) return [];
+  if (hooks === null || typeof hooks !== "object" || Array.isArray(hooks)) return undefined;
+  const found: SettingsHook[] = [];
+  for (const [event, groups] of Object.entries(hooks)) {
+    if (!Array.isArray(groups)) continue;
+    for (const group of groups as unknown[]) {
+      if (group === null || typeof group !== "object") continue;
+      const { matcher, hooks: handlers } = group as { matcher?: unknown; hooks?: unknown };
+      if (matcher !== undefined && typeof matcher !== "string") continue;
+      if (!Array.isArray(handlers)) continue;
+      for (const handler of handlers as unknown[]) {
+        if (handler === null || typeof handler !== "object") continue;
+        const { type, command } = handler as { type?: unknown; command?: unknown };
+        if (type !== "command" || typeof command !== "string") continue;
+        found.push({ event, matcher: matchesAll(matcher) ? "" : matcher, command: command.trim() });
+      }
+    }
+  }
+  return found;
+}
+
+const matchesAll = (matcher: string | undefined): matcher is undefined | "" | "*" =>
+  matcher === undefined || matcher === "" || matcher === "*";
+
+const sameHook = (a: SettingsHook, b: SettingsHook): boolean =>
+  a.event === b.event && a.matcher === b.matcher && a.command === b.command;
+
+const hookName = (hook: SettingsHook): string =>
+  `${hook.event}${hook.matcher === "" ? "" : ` (${hook.matcher})`} hook`;
+
 export interface SettingsCheck {
   readonly findings: Finding[];
   readonly rules: number;
   readonly present: number;
+  readonly hooks: number;
+  readonly hooksPresent: number;
 }
 
 export function checkSettings(input: {
@@ -40,9 +88,11 @@ export function checkSettings(input: {
 }): SettingsCheck {
   const { path, current } = input;
   const kit = input.kit === undefined ? undefined : denyRules(input.kit);
-  if (kit === undefined) return { findings: [], rules: 0, present: 0 };
+  if (kit === undefined) return { findings: [], rules: 0, present: 0, hooks: 0, hooksPresent: 0 };
+  const kitHooks = (input.kit === undefined ? undefined : hookCommands(input.kit)) ?? [];
+  const none = { rules: kit.length, present: 0, hooks: kitHooks.length, hooksPresent: 0 };
   if (input.linkedOutside === true) {
-    return { findings: [settingsLinkedOutside(path)], rules: kit.length, present: 0 };
+    return { findings: [settingsLinkedOutside(path)], ...none };
   }
 
   if (current === undefined) {
@@ -54,8 +104,7 @@ export function checkSettings(input: {
           "run mktrue sync --write: it writes the file when there is none",
         ),
       ],
-      rules: kit.length,
-      present: 0,
+      ...none,
     };
   }
 
@@ -69,8 +118,7 @@ export function checkSettings(input: {
           `fix the JSON in ${path}; permissions.deny is a list of rules`,
         ),
       ],
-      rules: kit.length,
-      present: 0,
+      ...none,
     };
   }
 
@@ -117,7 +165,35 @@ export function checkSettings(input: {
     );
   }
 
-  return { findings, rules: kit.length, present: kit.length - missing.length };
+  const currentHooks = hookCommands(current) ?? [];
+  const missingHooks = kitHooks.filter(
+    (hook) => !currentHooks.some((have) => sameHook(hook, have)),
+  );
+  const firstHook = missingHooks[0];
+  if (firstHook !== undefined) {
+    const others = missingHooks.length - 1;
+    const other = currentHooks.find(
+      (have) => have.event === firstHook.event && have.matcher === firstHook.matcher,
+    );
+    findings.push(
+      finding(
+        other === undefined
+          ? `${path} lacks the ${hookName(firstHook)}${others > 0 ? ` and ${others} more` : ""}`
+          : `${path} runs another command as its ${hookName(firstHook)}`,
+        "without the hook nothing stops a session past its context ceiling",
+        `add the command "${firstHook.command}" to hooks.${firstHook.event}` +
+          `${firstHook.matcher === "" ? "" : ` (${firstHook.matcher})`}`,
+      ),
+    );
+  }
+
+  return {
+    findings,
+    rules: kit.length,
+    present: kit.length - missing.length,
+    hooks: kitHooks.length,
+    hooksPresent: kitHooks.length - missingHooks.length,
+  };
 }
 
 const RULE = /^\s*(\w+)\(\s*(!?)(.*)\)\s*$/s;

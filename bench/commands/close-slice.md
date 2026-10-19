@@ -36,7 +36,7 @@ From the record, not from memory. **Replaced, never appended.** Under __MKTRUE_B
 
 ## 6 · Leave the tree
 
-Only after step 4 printed `MERGED`: delete the branch, remove the worktree, keep the slice folder until the milestone closes. Then clear the session: the next slice starts from `docs/STATE.md`.
+Only after step 4 printed `MERGED`: delete the branch, remove the worktree, keep the slice folder until the milestone closes, but delete its `resume.md`, so no later `/clear` resumes a closed slice. Then clear the session: the next slice starts from `docs/STATE.md`. Clear on context, not calls only: a lead past its 150k budget writes `resume.md` and clears mid-slice, and the guard puts it back.
 
 ## Done when
 

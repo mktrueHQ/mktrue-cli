@@ -312,3 +312,8 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
     findings,
   };
 }
+
+/** The bench this mktrue carries; it built every repository's roles. */
+export function embeddedManifest(): BenchManifest {
+  return benchManifestSchema.parse(JSON.parse(EMBEDDED_BENCH["bench.json"]!));
+}

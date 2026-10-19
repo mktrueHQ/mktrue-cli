@@ -114,6 +114,8 @@ export interface DoctorPorts {
   /** Probes pnpm pinned to the offered templates' own version, never the ambient one. */
   readonly pnpmRunner: Runner;
   readonly machine: Machine;
+  /** Reads inside the repository at `top`, never outside it. */
+  readonly repository?: (top: string) => Pick<FileSystem, "read">;
 }
 
 export interface TranscriptEntry {
@@ -136,6 +138,8 @@ export interface AuditPorts {
   readonly store: TranscriptStore;
   readonly configDir: () => string;
   readonly today: () => string;
+  /** The instant, in milliseconds, a `YYYY-MM-DD` day begins in this machine's zone. */
+  readonly localMidnight: (date: string) => number | undefined;
   readonly cwd: string;
   /** What is at `path` now, without following a link. */
   targetKind(path: string): Promise<"missing" | "file" | "dir" | "other">;
@@ -169,4 +173,20 @@ export type LocatedSibling =
 
 export interface SiblingPorts {
   locate(entry: string): Promise<LocatedSibling>;
+}
+
+export interface GuardPorts {
+  /** The hook's JSON, or nothing when stdin holds more than the guard reads. */
+  stdin(): Promise<string | undefined>;
+  /** Writes to stdout as it is, with no `mktrue:` grammar: the hook reads it as JSON. */
+  write(text: string): Promise<void>;
+  /** The nearest `.mktrue.json` from `cwd` up to the repository's root, and its directory. */
+  config(cwd: string): { readonly root: string; readonly text: string } | undefined;
+  /** A file's chunks, last first; reading stops when the caller stops pulling. */
+  tail(path: string): Iterable<Uint8Array>;
+  exists(path: string): boolean;
+  /** The directory that holds the repository's `.git`, which every worktree shares. */
+  mainCheckout(root: string): Promise<string | undefined>;
+  /** The most recently written `<main>/.mktrue/slices/<id>/resume.md`, a regular file. */
+  newestResume(main: string): { readonly path: string; readonly content: string } | undefined;
 }

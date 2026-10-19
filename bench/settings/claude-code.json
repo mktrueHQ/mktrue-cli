@@ -33,5 +33,14 @@
       "Bash(git filter-branch*)",
       "Bash(git filter-repo*)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [{ "hooks": [{ "type": "command", "command": "mktrue guard || true" }] }],
+    "SessionStart": [
+      {
+        "matcher": "clear",
+        "hooks": [{ "type": "command", "command": "mktrue guard --resume || true" }]
+      }
+    ]
   }
 }

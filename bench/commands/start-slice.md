@@ -6,7 +6,7 @@ From a written brief to a reviewed change. Read `<slice folder>/brief.md`; if th
 
 `implementer` or `ui-engineer` → `security-auditor` **if triggered** → `reviewer`.
 
-Save each report as rule 2 of `.claude/agents/README.md` says, before you spawn the next agent. Each agent reads the earlier saved reports, **never a summary you paste**. The auditor and the reviewer never run at once, and no finished agent is resumed (rule 3 of `.claude/agents/README.md`).
+Spawn each as rules 1 and 7 of `.claude/agents/README.md` say. Save each report as rule 2 of `.claude/agents/README.md` says, before you spawn the next agent. Each agent reads the earlier saved reports, **never a summary you paste**. The auditor and the reviewer never run at once, and no finished agent is resumed (rule 3 of `.claude/agents/README.md`).
 
 **When the auditor runs**, its scope is the branch diff against its base plus anything uncommitted, unless the brief says otherwise; say which it is. **Do not pre-filter what it sees.** Then triage its report:
 
@@ -17,7 +17,7 @@ Save each report as rule 2 of `.claude/agents/README.md` says, before you spawn 
 
 ## 2 · Follow-ups are new agents
 
-Append a `## Follow-up <n>` section to the brief with the saved report paths, and spawn a fresh agent against it.
+Append a `## Follow-up <n>` section to the brief with the saved report paths, and spawn the follow-up against it as rules 3 and 7 of `.claude/agents/README.md` say.
 
 ## 3 · On an `approve` verdict
 

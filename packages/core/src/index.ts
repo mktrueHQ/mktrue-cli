@@ -47,9 +47,20 @@ export {
   checkGates,
   checkSettings,
   denyRules,
+  hookCommands,
   settingsLinkedOutside,
 } from "./settings.js";
-export type { SettingsCheck } from "./settings.js";
+export type { SettingsCheck, SettingsHook } from "./settings.js";
+export {
+  contextOfUsage,
+  guardDecision,
+  HOOK_CONTEXT_MAX,
+  isHandoffWrite,
+  preToolUseOutput,
+  RESUME_FILE,
+  sessionStartOutput,
+} from "./guard.js";
+export type { GuardDecision, GuardSession } from "./guard.js";
 export type { RulesAction, RulesInput, RulesPlan } from "./rules.js";
 
 export {
@@ -127,16 +138,37 @@ export {
 } from "./questions.js";
 export type { Question, QuestionKind } from "./questions.js";
 
-export { REQUIRED_PNPM, isOneMillionModel, nodeSatisfies, pnpmPin } from "./doctor.js";
+export {
+  REQUIRED_PNPM,
+  isOneMillionModel,
+  missingRoleFiles,
+  nodeSatisfies,
+  pnpmPin,
+  roleFileName,
+} from "./doctor.js";
 
 export {
   DEFAULT_GATES,
   OUTSIDE_REPOSITORY,
   auditMetrics,
+  eventInWindow,
+  isInWindow,
+  mergedInWindow,
+  modelDiffers,
   renderAuditHtml,
+  RUNS_PER_SLICE,
+  sliceBound,
   repoRelative,
+  testRunOf,
 } from "./audit.js";
-export type { AuditRun, AuditTranscript, AuditTree } from "./audit.js";
+export type {
+  AuditMerged,
+  AuditRole,
+  AuditRun,
+  AuditTranscript,
+  AuditTree,
+  AuditWindow,
+} from "./audit.js";
 
 export {
   compareSiblings,

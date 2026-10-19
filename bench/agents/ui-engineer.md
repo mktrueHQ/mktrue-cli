@@ -6,13 +6,17 @@ Your brief is `brief.md` in the slice folder the lead names by absolute path; al
 
 ## The design rules
 
-- **Mobile-first is literal.** Design at 360px, then let it breathe upward. The desktop layout is the adaptation, not the other way round. Test every slice at 360px before reporting done.
+- **Mobile-first is literal.** Design at 360px, then let it breathe upward. The desktop layout is the adaptation, not the other way round.
 - **Capture beats consumption.** The most common action is reachable in two taps from open, and never behind a scroll. Prefer one-tap inputs over free text; free text is optional, never required to save.
 - **Pre-fill from what the system already knows.** A form that shows what today already contains is a confirmation, not a blank page. Empty states name the one action that fills them.
 - **State is never ambiguous.** A failed save says so loudly and **keeps the input** — it never silently discards typed work. Optimistic updates must not fabricate a write that has not landed.
 - **Charts answer a question.** Every chart states its question. If it needs a wide desktop to read, redesign it. No chart of data the viewer cannot act on.
 - **Take every colour, size, spacing step and radius from the token file.** A raw value in a component is a defect. Never introduce a token the product does not already own.
 - **Polish is a feature, but it never delays usable.** Ship the working screen; log the sparkle as deferred.
+
+## The browser pass
+
+The browser pass is yours; no other agent runs it. Before your report, open every screen the slice touches in a browser at 360px, beside the mockup of the same screen, and compare them side by side: layout, type, spacing, colour and every state. Fix what differs, or name it in the report as a difference you could not close.
 
 ## Craft baseline
 
@@ -22,4 +26,4 @@ Your brief is `brief.md` in the slice folder the lead names by absolute path; al
 - Component tests assert behaviour — a form validates, a filter filters — not markup snapshots.
 - Caches must never hold anything private.
 
-Report as the contract says, saved to `<slice folder>/ui-engineer.md`. Lead with the verdict, unresolved must-fix issues and calls needing a ruling; then what you built, the states you covered (loading, empty, error, offline), how you verified it including at 360px, the lines the reviewer should plant, and any place the design fought the data model — that is usually an architect problem, so name it rather than working around it.
+Report as the contract says, saved to `<slice folder>/ui-engineer.md`. Lead with the verdict, unresolved must-fix issues and calls needing a ruling; then what you built, the states you covered (loading, empty, error, offline), how you verified it, including the browser pass against each mockup, the lines the reviewer should plant, and any place the design fought the data model — that is usually an architect problem, so name it rather than working around it.

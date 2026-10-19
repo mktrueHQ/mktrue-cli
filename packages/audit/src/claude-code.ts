@@ -40,6 +40,9 @@ const SLICE_PATTERN = new RegExp(`/slices/(${SLICE_ID})/`);
 const ROLE_PATTERN = new RegExp(`/slices/${SLICE_ID}/([A-Za-z0-9_-]+)\\.md`, "g");
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 const PATH_START = `(?<![^\\s"'\`(<\\[=:,])`;
+const FIRST_LINE = new RegExp(
+  `^Slice (\`?)(${SLICE_ID})\\1, role ([a-z][a-z0-9-]*), slice folder (\`?)((?:/|[A-Za-z]:[\\\\/])[^\\s\`]*?)\\4\\.$`,
+);
 
 type Json = Record<string, unknown>;
 
@@ -56,6 +59,8 @@ function num(value: unknown): number | undefined {
 }
 
 type ToolUseEvent = Extract<AuditEvent, { kind: "tool_use" }>;
+
+export type TestRunOf = (command: string) => { package?: string } | undefined;
 type Envelope = ReturnType<typeof envelopeOf>;
 
 function defined<T extends object>(fields: T): { [K in keyof T]?: Exclude<T[K], undefined> } {
@@ -119,14 +124,21 @@ function roleOf(match: RegExpMatchArray): string | undefined {
   return name === undefined || name === "brief" ? undefined : name.replace(/-\d+$/, "");
 }
 
-function sliceAndRole(prompt: string): { slice?: string; role?: string } {
-  const slice = SLICE_PATTERN.exec(prompt)?.[1];
+/** The slice and role the contract's first line states: `Slice <id>, role <role>, slice folder <path>.` */
+export function firstLine(prompt: string): { slice: string; role: string } | undefined {
+  const match = FIRST_LINE.exec(prompt.split("\n", 1)[0]!.trimEnd());
+  return match === null ? undefined : { slice: match[2]!, role: match[3]! };
+}
+
+function sliceAndRole(prompt: string): { slice?: string; role?: string; statedRole?: string } {
+  const stated = firstLine(prompt);
+  const slice = stated?.slice ?? SLICE_PATTERN.exec(prompt)?.[1];
   let role: string | undefined;
   for (const match of prompt.matchAll(ROLE_PATTERN)) {
     role = roleOf(match);
     if (role !== undefined) break;
   }
-  return defined({ slice, role });
+  return defined({ slice, role, statedRole: stated?.role });
 }
 
 function claimPattern(common: string): RegExp {
@@ -140,18 +152,20 @@ function spawnEvent(block: Json, claim: RegExp): SpawnEvent | undefined {
   const toolUseId = str(block.id);
   if (toolUseId === undefined || !ID_PATTERN.test(toolUseId)) return undefined;
   const input = isObject(block.input) ? block.input : {};
+  const prompt = str(input.prompt) ?? "";
   let slice: string | undefined;
   let role: string | undefined;
-  for (const match of (str(input.prompt) ?? "").matchAll(claim)) {
+  for (const match of prompt.matchAll(claim)) {
     slice ??= match[1];
     if (role === undefined && match[1] === slice) role = roleOf(match);
   }
   if (slice === undefined) return undefined;
+  const stated = firstLine(prompt);
   return {
     kind: "spawn",
     toolUseId,
-    slice,
-    ...defined({ role, subagentType: str(input.subagent_type) }),
+    slice: stated?.slice ?? slice,
+    ...defined({ role, statedRole: stated?.role, subagentType: str(input.subagent_type) }),
   };
 }
 
@@ -167,6 +181,7 @@ function toolUseEvent(
   envelope: Envelope,
   block: Json,
   gates: readonly RegExpAndName[],
+  testRunOf: TestRunOf | undefined,
 ): ToolUseEvent | undefined {
   const name = str(block.name);
   if (name === undefined) return undefined;
@@ -179,6 +194,8 @@ function toolUseEvent(
   } else if (name === "Bash") {
     const command = str(input.command) ?? "";
     event.gates = gates.filter((gate) => gate.pattern.test(command)).map((gate) => gate.name);
+    const testRun = testRunOf?.(command);
+    if (testRun !== undefined) event.testRun = testRun;
   } else if (name === "Agent") {
     Object.assign(
       event,
@@ -255,6 +272,7 @@ export async function* readClaudeCode(
   gates: readonly string[],
   keep?: (cwd: string) => boolean,
   common?: string,
+  testRunOf?: TestRunOf,
 ): AsyncGenerator<ReaderEvent, ReaderTally> {
   const gatePatterns = gates.map((name) => ({ name, pattern: gatePattern(name) }));
   const claim = common === undefined ? undefined : claimPattern(common);
@@ -331,7 +349,7 @@ export async function* readClaudeCode(
       };
       for (const block of blocks) {
         if (block.type !== "tool_use") continue;
-        const event = toolUseEvent(envelope, block, gatePatterns);
+        const event = toolUseEvent(envelope, block, gatePatterns, testRunOf);
         if (event !== undefined) yield event;
       }
       yield* spawnsOf(message, claim);

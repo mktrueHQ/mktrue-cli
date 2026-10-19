@@ -5,6 +5,7 @@ import { EXIT, type ExitCode } from "@mktrue/core";
 import { runAudit } from "./commands/audit.js";
 import { runCheck } from "./commands/check.js";
 import { runDoctor } from "./commands/doctor.js";
+import { runGuard } from "./commands/guard.js";
 import { runImport } from "./commands/import.js";
 import { runNew } from "./commands/new.js";
 import { runCheckSiblings } from "./commands/siblings.js";
@@ -14,6 +15,7 @@ import type {
   AuditPorts,
   DoctorPorts,
   FileSystem,
+  GuardPorts,
   NewPorts,
   OpenBench,
   OpenRepository,
@@ -25,7 +27,7 @@ import { loadRepo } from "./repo.js";
 import { clip, columns, errorCode, internalError, refuse, setColumns } from "./report.js";
 import { refuseUnsafeShell, UnsafeShellArgument } from "./spawn.js";
 
-export const KIT_VERSION = "1.1.1";
+export const KIT_VERSION = "1.2.0";
 
 /** The exit for whatever `main` throws: a refused shell argument is exit 3, anything else a crash. */
 export function exitOnThrow(out: Output, error: unknown): ExitCode {
@@ -44,6 +46,7 @@ export async function main(
   doctorPorts?: DoctorPorts,
   auditPorts?: AuditPorts,
   siblingPorts?: SiblingPorts,
+  guardPorts?: GuardPorts,
 ): Promise<ExitCode> {
   setColumns(out.columns);
   let parsed;
@@ -54,6 +57,7 @@ export async function main(
       options: OPTIONS,
     });
   } catch (error) {
+    if (argv[0] === "guard") return EXIT.TRUE;
     out.line(clip(`mktrue: ✗ usage · an argument was refused: ${errorCode(error)}`, columns()));
     out.line(USAGE);
     return EXIT.USAGE;
@@ -82,6 +86,11 @@ export async function main(
 
   if (command === "doctor") {
     return runDoctorCommand(parsed.values, out, doctorPorts);
+  }
+
+  if (command === "guard") {
+    if (guardPorts === undefined) return EXIT.TRUE;
+    return runGuard(guardPorts, { resume: parsed.values.resume === true });
   }
 
   if (command === "audit") {
@@ -186,7 +195,12 @@ async function runImportCommand(
 
 async function runAuditCommand(
   positionals: readonly string[],
-  values: { out?: string | undefined; json?: boolean | undefined },
+  values: {
+    out?: string | undefined;
+    json?: boolean | undefined;
+    since?: string | undefined;
+    until?: string | undefined;
+  },
   out: Output,
   auditPorts?: AuditPorts,
 ): Promise<ExitCode> {
@@ -194,7 +208,7 @@ async function runAuditCommand(
     return refuse(
       out,
       "usage",
-      "audit takes no arguments, only --out <file> or --json",
+      "audit takes no arguments, only its flags",
       "it always measures the repository it runs in",
       "mktrue audit",
       EXIT.USAGE,
@@ -210,7 +224,12 @@ async function runAuditCommand(
       EXIT.ENVIRONMENT,
     );
   }
-  return runAudit(auditPorts, out, { out: values.out, json: values.json === true });
+  return runAudit(auditPorts, out, {
+    out: values.out,
+    json: values.json === true,
+    since: values.since,
+    until: values.until,
+  });
 }
 
 async function runDoctorCommand(
