@@ -17,6 +17,7 @@ export const DEFAULT_GATES: readonly string[] = [
 ];
 
 const NO_ROLE = "(no role)";
+const LEAD = "lead";
 const NO_SLICE = "(no slice)";
 export const OUTSIDE_REPOSITORY = "outside the repository";
 
@@ -26,6 +27,7 @@ export const RUNS_PER_SLICE = 4;
 const GENERAL_PURPOSE = "general-purpose";
 const BUCKET_UPPER_BOUNDS = [20_000, 50_000, 100_000, 150_000, 200_000];
 const TOP_RE_READS = 10;
+export const RE_READS_PER_SLICE = 5;
 
 export interface AuditTree {
   readonly path: string;
@@ -38,6 +40,8 @@ export interface AuditTranscript {
   /** Present for a subagent's file, absent for a main session's. */
   readonly agentId?: string;
   readonly events: readonly AuditEvent[];
+  /** The file's earliest call fell outside the window, so its first kept call is mid-run. */
+  readonly startedBefore?: boolean;
 }
 
 /** Absolute instants in milliseconds, half-open: `since` is in, `until` is out. */
@@ -67,6 +71,8 @@ export interface AuditRun {
   readonly window?: AuditWindow;
   /** Absent when git could not name the base branch's commits. */
   readonly merged?: AuditMerged;
+  /** `budgets.fixedReading`, in tokens; absent, no run is measured against it. */
+  readonly fixedReadingBudget?: number;
 }
 
 export function isInWindow(time: number | undefined, window: AuditWindow): boolean {
@@ -76,6 +82,13 @@ export function isInWindow(time: number | undefined, window: AuditWindow): boole
     (window.since === undefined || time >= window.since) &&
     (window.until === undefined || time < window.until)
   );
+}
+
+/** A model call that was billed: an assistant record with usage, not a synthetic one. */
+export function isCall(
+  event: AuditEvent,
+): event is Extract<AuditEvent, { kind: "assistant" }> & { usage: object } {
+  return event.kind === "assistant" && event.usage !== undefined && event.model !== SYNTHETIC_MODEL;
 }
 
 export function eventInWindow(event: AuditEvent, window: AuditWindow): boolean {
@@ -237,7 +250,7 @@ function workOf(events: readonly AuditEvent[], trees: readonly AuditTree[]): Wor
 
   for (const event of events) {
     if (event.kind === "assistant") {
-      if (event.usage === undefined || event.model === SYNTHETIC_MODEL) continue;
+      if (!isCall(event)) continue;
       calls.push({
         context: contextOf(event.usage),
         usage: event.usage,
@@ -341,7 +354,7 @@ function shapeOf(
   agents: AuditReport["agents"],
   slices: AuditReport["slices"],
   registered: ReadonlyMap<string, AuditRole>,
-): AuditReport["shape"] {
+): Omit<AuditReport["shape"], "overReads"> {
   const noRole = agents.filter((a) => a.statedRole === null).length;
   const invented = new Map<string, number>();
   for (const { statedRole } of agents) {
@@ -491,11 +504,30 @@ export function auditMetrics(
     for (const call of workOfFile(t).calls) histogram[bucketOf(call.context)]![side] += 1;
   }
 
+  const firstCallOf = (t: AuditTranscript) =>
+    t.startedBefore === true ? undefined : workOfFile(t).calls[0];
+  const startedBefore = kept.filter(
+    (t) => t.startedBefore === true && workOfFile(t).calls.length > 0,
+  ).length;
+
   const firstContexts = (files: readonly AuditTranscript[]) =>
     files.flatMap((t) => {
-      const first = workOfFile(t).calls[0];
+      const first = firstCallOf(t);
       return first === undefined ? [] : [first.context];
     });
+
+  const runsOverFloor = (budget: number) =>
+    [
+      ...leadFiles.map((t) => ({ t, run: t.sessionId, role: LEAD })),
+      ...agentFiles.map((t, i) => ({ t, run: t.agentId!, role: agents[i]!.role })),
+    ]
+      .flatMap(({ t, run, role }) => {
+        const first = firstCallOf(t);
+        return first === undefined || first.context <= budget
+          ? []
+          : [{ run, role, tokens: first.context }];
+      })
+      .sort((a, b) => b.tokens - a.tokens || compareText(a.run, b.run));
 
   const topPaths = new Map<string, number>();
   for (const w of work.values()) {
@@ -538,6 +570,23 @@ export function auditMetrics(
     };
   });
 
+  const overReads: AuditReport["shape"]["overReads"] = [];
+  for (const slice of sliceNames) {
+    if (slice === null) continue;
+    const perPath = new Map<string, number>();
+    agentFiles.forEach((t, i) => {
+      if (agents[i]!.slice !== slice) return;
+      for (const [path, count] of workOfFile(t).reReadPaths) {
+        if (path !== OUTSIDE_REPOSITORY) perPath.set(path, (perPath.get(path) ?? 0) + count);
+      }
+    });
+    for (const [path, reReads] of [...perPath].sort(
+      ([pa, a], [pb, b]) => b - a || compareText(pa, pb),
+    )) {
+      if (reReads > RE_READS_PER_SLICE) overReads.push({ slice, path, reReads });
+    }
+  }
+
   const allWork = [...work.values()];
   const processed = allWork.reduce((total, w) => addProcessed(total, w.processed), ZERO);
   const processedTokens =
@@ -552,7 +601,7 @@ export function auditMetrics(
   }
   const pullRequests = run.merged === undefined ? 0 : mergedInWindow(run.merged.committed, window);
   return {
-    schema: 3,
+    schema: 4,
     date: run.date,
     window: { since: instant(window.since), until: instant(window.until) },
     subagentOnly: [...SUBAGENT_ONLY],
@@ -563,6 +612,10 @@ export function auditMetrics(
     fixedReading: {
       lead: distribution(firstContexts(leadFiles)),
       subagents: distribution(firstContexts(agentFiles)),
+      ...(startedBefore === 0 ? {} : { startedBefore }),
+      ...(run.fixedReadingBudget === undefined
+        ? {}
+        : { budget: run.fixedReadingBudget, over: runsOverFloor(run.fixedReadingBudget) }),
     },
     reReads: {
       count: sum(allWork.map((w) => w.reReads)),
@@ -589,7 +642,7 @@ export function auditMetrics(
               pullRequests === 0 ? null : Math.round(processedTokens / pullRequests),
           },
     slices,
-    shape: shapeOf(agents, slices, registered),
+    shape: { ...shapeOf(agents, slices, registered), overReads },
     totals: {
       agents: agents.length,
       slices: slices.length,
@@ -923,6 +976,14 @@ export function renderAuditHtml(report: AuditReport): string {
       table(
         ["slice", "runs (runs)", "bound (runs)"],
         shape.overBound.map((o) => [o.slice, o.runs, o.bound]),
+      ),
+    ),
+    section(
+      "Paths re-read past the bound",
+      `A path re-read more than ${RE_READS_PER_SLICE} times in one slice, summed over its subagents.`,
+      table(
+        ["slice", "path", "re-reads (reads)"],
+        shape.overReads.map((o) => [o.slice, o.path, o.reReads]),
       ),
     ),
   );

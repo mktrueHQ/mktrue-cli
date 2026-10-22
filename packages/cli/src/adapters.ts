@@ -22,7 +22,18 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { basename, delimiter, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import {
+  basename,
+  delimiter,
+  dirname,
+  isAbsolute,
+  join,
+  posix,
+  relative,
+  resolve,
+  sep,
+  win32,
+} from "node:path";
 import { isSea } from "node:sea";
 import type { Readable, Writable } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
@@ -80,6 +91,13 @@ async function realPathOfNearest(full: string): Promise<string> {
   }
 }
 
+function refusedRead(path: string, code: string): NodeJS.ErrnoException {
+  return Object.assign(new Error(`${path} was not read · ${code}`), { code });
+}
+
+/** What a repository read of a file someone listed may cost; past it the file is refused. */
+export const REPOSITORY_READ_MAX_BYTES = 8 * 1024 * 1024;
+
 export function nodeFileSystem(root: string, options: { exclusive?: boolean } = {}): FileSystem {
   const base = resolve(root);
   let realBase: string | undefined;
@@ -96,12 +114,22 @@ export function nodeFileSystem(root: string, options: { exclusive?: boolean } = 
   };
 
   return {
-    async read(path) {
+    async read(path, maxBytes = Infinity) {
+      let handle;
       try {
-        return await readFile(await within(path), "utf8");
+        handle = await open(await within(path), fsConstants.O_RDONLY | fsConstants.O_NONBLOCK);
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
         throw error;
+      }
+      try {
+        const info = await handle.stat();
+        if (info.isDirectory()) throw refusedRead(path, "EISDIR");
+        if (!info.isFile()) throw refusedRead(path, "NOT_A_FILE");
+        if (info.size > maxBytes) throw refusedRead(path, "TOO_LARGE");
+        return await handle.readFile("utf8");
+      } finally {
+        await handle.close();
       }
     },
 
@@ -412,9 +440,82 @@ export function extractModel(settings: unknown): string | undefined {
   return typeof model === "string" ? model : undefined;
 }
 
-function configDirFrom(env: NodeJS.ProcessEnv): string {
+function objectAt(parsed: unknown, key: string): Record<string, unknown> | undefined {
+  if (parsed === null || typeof parsed !== "object") return undefined;
+  const value = (parsed as Record<string, unknown>)[key];
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
+  return value as Record<string, unknown>;
+}
+
+/** The `enabledPlugins` keys set to `true`; a value is compared, never kept or shown. */
+export function extractEnabledPlugins(settings: unknown): string[] {
+  const plugins = objectAt(settings, "enabledPlugins");
+  if (plugins === undefined) return [];
+  return Object.keys(plugins).filter((name) => plugins[name] === true);
+}
+
+/** The `mcpServers` keys; an entry's value can hold tokens and is never touched. */
+export function extractMcpServerNames(config: unknown): string[] {
+  const servers = objectAt(config, "mcpServers");
+  return servers === undefined ? [] : Object.keys(servers);
+}
+
+/**
+ * The `mcpServers` keys of this repository's own entry under `projects`,
+ * looked up by its exact path; the other keys name the user's repositories.
+ */
+export function extractLocalMcpServerNames(
+  config: unknown,
+  repo: string,
+  platform: NodeJS.Platform,
+): string[] {
+  const projects = objectAt(config, "projects");
+  if (projects === undefined) return [];
+  const spellings =
+    platform === "win32" ? [repo, repo.replaceAll("\\", "/"), repo.replaceAll("/", "\\")] : [repo];
+  const key = spellings.find((spelling) => Object.hasOwn(projects, spelling));
+  return key === undefined ? [] : extractMcpServerNames(projects[key]);
+}
+
+/** Names from a JSON file's text, or none when it is not JSON. */
+export function namesIn(
+  text: string | undefined,
+  extract: (parsed: unknown) => string[],
+): string[] {
+  if (text === undefined) return [];
+  try {
+    return extract(JSON.parse(text));
+  } catch {
+    return [];
+  }
+}
+
+function configDirFrom(env: NodeJS.ProcessEnv, home: string): string {
   const configured = env["CLAUDE_CONFIG_DIR"];
-  return configured !== undefined && configured !== "" ? configured : join(homedir(), ".claude");
+  return configured !== undefined && configured !== "" ? configured : join(home, ".claude");
+}
+
+/**
+ * The user settings and the user-level Claude config. `CLAUDE_CONFIG_DIR`
+ * moves both; without it the config sits beside the directory, in the home.
+ */
+export function userConfigFiles(
+  platform: NodeJS.Platform,
+  env: NodeJS.ProcessEnv,
+  home: string,
+): { readonly settings: string; readonly config: string } {
+  const path = platform === "win32" ? win32 : posix;
+  const configured = env["CLAUDE_CONFIG_DIR"];
+  if (configured !== undefined && configured !== "") {
+    return {
+      settings: path.join(configured, "settings.json"),
+      config: path.join(configured, ".claude.json"),
+    };
+  }
+  return {
+    settings: path.join(home, ".claude", "settings.json"),
+    config: path.join(home, ".claude.json"),
+  };
 }
 
 /**
@@ -442,6 +543,9 @@ async function readCapped(path: string, maxBytes: number): Promise<string | unde
 }
 
 const SETTINGS_MAX_BYTES = 1024 * 1024;
+
+/** The user-level config also holds per-project history, so it is allowed to grow. */
+const USER_CONFIG_MAX_BYTES = 64 * 1024 * 1024;
 
 const SKILL_MAX_BYTES = 64 * 1024;
 
@@ -487,10 +591,10 @@ async function whichOnWindows(host: Host): Promise<string | undefined> {
 export function nodeMachine(
   bundlePath: string,
   hooks: MachineTestHooks = {},
-  host: Host & { symlink?: typeof symlink } = processHost(),
+  host: Host & { symlink?: typeof symlink },
   inSea: () => boolean = isSea,
 ): Machine {
-  const configDir = () => configDirFrom(host.env);
+  const configDir = () => configDirFrom(host.env, host.home);
   const link = (target: string, path: string) =>
     host.platform === "win32"
       ? (host.symlink ?? symlink)(target, path, "junction")
@@ -539,7 +643,7 @@ export function nodeMachine(
       return undefined;
     },
 
-    homeDir: () => homedir(),
+    homeDir: () => host.home,
 
     async selfPath() {
       try {
@@ -569,6 +673,25 @@ export function nodeMachine(
       if (frontmatter === undefined || frontmatter === null) return undefined;
       const match = /^name:\s*(\S+)\s*$/mu.exec(frontmatter[1] ?? "");
       return match?.[1];
+    },
+
+    userConfigFiles: () => userConfigFiles(host.platform, host.env, host.home),
+
+    async readUserPluginNames() {
+      const { settings } = userConfigFiles(host.platform, host.env, host.home);
+      return namesIn(await readCapped(settings, SETTINGS_MAX_BYTES), extractEnabledPlugins);
+    },
+
+    async readUserMcpServerNames(repo) {
+      const { config } = userConfigFiles(host.platform, host.env, host.home);
+      const text = await readCapped(config, USER_CONFIG_MAX_BYTES);
+      return {
+        user: namesIn(text, extractMcpServerNames),
+        local:
+          repo === undefined
+            ? []
+            : namesIn(text, (parsed) => extractLocalMcpServerNames(parsed, repo, host.platform)),
+      };
     },
 
     async readSettingsModel() {
@@ -827,7 +950,7 @@ export function nodeAuditPorts(cwd: string): AuditPorts {
   return {
     runner: nodeRunner(cwd),
     store: nodeTranscriptStore(),
-    configDir: () => configDirFrom(process.env),
+    configDir: () => configDirFrom(process.env, homedir()),
     today: () => localDate(),
     localMidnight,
     cwd: resolve(cwd),

@@ -16,8 +16,18 @@ export type { EscapeContext, Substitution } from "./slots.js";
 
 export { hashContent, stampHeader } from "./stamp.js";
 
-export { characterCount, checkBudgets } from "./budgets.js";
-export type { Document } from "./budgets.js";
+export {
+  DEFAULT_READ_BUDGET,
+  characterCount,
+  checkBudgets,
+  checkReadBudgets,
+  clipLeft,
+  globBase,
+  isGlob,
+  matchesGlob,
+  normaliseListed,
+} from "./budgets.js";
+export type { Document, ReadRefusal } from "./budgets.js";
 
 export {
   benchEntries,
@@ -145,6 +155,14 @@ export {
   nodeSatisfies,
   pnpmPin,
   roleFileName,
+  sessionReport,
+} from "./doctor.js";
+export type {
+  LoadedName,
+  SessionAllowance,
+  SessionFile,
+  SessionLoad,
+  SessionScope,
 } from "./doctor.js";
 
 export {
@@ -152,10 +170,12 @@ export {
   OUTSIDE_REPOSITORY,
   auditMetrics,
   eventInWindow,
+  isCall,
   isInWindow,
   mergedInWindow,
   modelDiffers,
   renderAuditHtml,
+  RE_READS_PER_SLICE,
   RUNS_PER_SLICE,
   sliceBound,
   repoRelative,

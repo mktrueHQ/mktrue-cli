@@ -1,7 +1,8 @@
 import type { Finding, Question } from "@mktrue/core";
 
 export interface FileSystem {
-  read(path: string): Promise<string | undefined>;
+  /** Throws `NOT_A_FILE` for a FIFO or device, `TOO_LARGE` past `maxBytes`. */
+  read(path: string, maxBytes?: number): Promise<string | undefined>;
   write(path: string, content: string, executable?: boolean): Promise<void>;
   rename(from: string, to: string): Promise<void>;
   remove(path: string): Promise<void>;
@@ -101,6 +102,17 @@ export interface Machine {
   readSkillName(dir: string): Promise<string | undefined>;
   /** The single `model` key of `<config>/settings.json`; nothing else is read. */
   readSettingsModel(): Promise<string | undefined>;
+  /** The user settings and the user-level Claude config, by path. */
+  userConfigFiles(): { readonly settings: string; readonly config: string };
+  /** The `enabledPlugins` names set to true in the user settings; no value is read. */
+  readUserPluginNames(): Promise<readonly string[]>;
+  /**
+   * The `mcpServers` names of the user-level Claude config, and of its
+   * `projects` entry for `repo` alone; no value is read.
+   */
+  readUserMcpServerNames(
+    repo: string | undefined,
+  ): Promise<{ readonly user: readonly string[]; readonly local: readonly string[] }>;
   /** Links `target` at `path`, which `inspectLink` just found missing. */
   linkFresh(target: string, path: string): Promise<LinkOutcome>;
   /** Replaces `path`, our own link to `expectedRealPath`, with a link to `target`. */
@@ -115,7 +127,7 @@ export interface DoctorPorts {
   readonly pnpmRunner: Runner;
   readonly machine: Machine;
   /** Reads inside the repository at `top`, never outside it. */
-  readonly repository?: (top: string) => Pick<FileSystem, "read">;
+  readonly repository?: (top: string) => ReadOnlyFileSystem;
 }
 
 export interface TranscriptEntry {

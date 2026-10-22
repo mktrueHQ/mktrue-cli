@@ -340,6 +340,10 @@
     "2": "rules/02-stack-and-versions.md",
     "10": "rules/10-where-things-live.md"
   },
+  "session": {
+    "plugins": [],
+    "mcpServers": []
+  },
   "gates": [
     "pnpm install --frozen-lockfile",
     "pnpm typecheck",

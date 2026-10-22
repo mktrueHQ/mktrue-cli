@@ -8,6 +8,7 @@ import {
   checkComposition,
   checkDocumentPaths,
   checkDrift,
+  checkReadBudgets,
   checkFreeTextTokenPositions,
   checkGates,
   checkGeneratedLockfiles,
@@ -24,7 +25,7 @@ import type { MktrueConfig } from "@mktrue/contracts";
 
 import type { Output } from "../ports.js";
 import type { Repo } from "../repo.js";
-import { columns, clip } from "../report.js";
+import { columns, clip, printable } from "../report.js";
 
 const number = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
@@ -100,6 +101,24 @@ export function runGates(repo: Repo, kitVersion: string): GateRun {
       ].filter((line) => line !== "");
     },
   );
+
+  const reads = repo.config?.budgets.reads;
+  if (reads !== undefined) {
+    gate(
+      "reads",
+      () => {
+        const result = checkReadBudgets(
+          reads,
+          repo.readFiles,
+          columns() - "mktrue: ✗ reads · ".length,
+          repo.readRefused,
+        );
+        const findings = result.findings.map((f) => ({ ...f, what: printable(f.what) }));
+        return { ...result, findings };
+      },
+      (r) => `${r.listed} listed · ${r.files} files · ${r.over} over`,
+    );
+  }
 
   if (repo.manifest !== undefined) {
     const manifest = repo.manifest;

@@ -22,7 +22,10 @@ import {
   DEFAULT_GATES,
   EXIT,
   auditMetrics,
+  clipLeft,
   eventInWindow,
+  isCall,
+  RE_READS_PER_SLICE,
   renderAuditHtml,
   testRunOf,
   type AuditMerged,
@@ -274,6 +277,7 @@ async function readTranscript(
   const spawns: SpawnEvent[] = [];
   const uuids = new Set<string>();
   let records = 0;
+  let firstCall: boolean | undefined;
   for (;;) {
     let step;
     try {
@@ -289,6 +293,7 @@ async function readTranscript(
         sessionId: file.sessionId,
         events,
         ...(file.agentId === undefined ? {} : { agentId: file.agentId }),
+        ...(firstCall === false ? { startedBefore: true } : {}),
       };
       return { transcript, tally: step.value, records, spawns, claimed };
     }
@@ -298,7 +303,9 @@ async function readTranscript(
       spawns.push(event);
       continue;
     }
-    if (!eventInWindow(event, scan.window)) continue;
+    const inWindow = eventInWindow(event, scan.window);
+    if (firstCall === undefined && isCall(event)) firstCall = inWindow;
+    if (!inWindow) continue;
     events.push(event);
     if (event.kind === "meta") continue;
     if (event.uuid === undefined) records += 1;
@@ -338,14 +345,19 @@ const DEFAULT_BASE = "main";
 async function configOf(
   ports: AuditPorts,
   top: string,
-): Promise<{ gates: readonly string[]; base: string | undefined }> {
+): Promise<{ gates: readonly string[]; base: string | undefined; floor?: number }> {
   const text = await ports.store.readSmall(join(top, ".mktrue.json"));
   if (text === undefined) return { gates: DEFAULT_GATES, base: DEFAULT_BASE };
   try {
-    const raw = JSON.parse(text) as { gates?: unknown; baseBranch?: unknown };
+    const raw = JSON.parse(text) as { gates?: unknown; baseBranch?: unknown; budgets?: unknown };
     const gates = mktrueConfigSchema.shape.gates.safeParse(raw.gates);
     const base = mktrueConfigSchema.shape.baseBranch.optional().safeParse(raw.baseBranch);
+    const budgets = raw.budgets !== null && typeof raw.budgets === "object" ? raw.budgets : {};
+    const floor = mktrueConfigSchema.shape.budgets.shape.fixedReading.safeParse(
+      (budgets as { fixedReading?: unknown }).fixedReading,
+    );
     return {
+      ...(floor.success && floor.data !== undefined ? { floor: floor.data } : {}),
       gates:
         gates.success && gates.data !== undefined && gates.data.length > 0
           ? gates.data
@@ -490,6 +502,8 @@ function refuseEvent(out: Output, { rejected }: Rejected): ExitCode {
   );
 }
 
+const TOP_SHOWN = 3;
+
 export function shapeLines(shape: AuditReport["shape"]): string[] {
   const share = shape.noRolePercent === null ? "" : ` · ${shape.noRolePercent}%`;
   const lines = [`mktrue: no role · ${shape.noRole} of ${shape.runs} runs${share}`];
@@ -509,6 +523,39 @@ export function shapeLines(shape: AuditReport["shape"]): string[] {
     const n = shape.overBound.length;
     lines.push(`mktrue: over the bound · ${n} ${n === 1 ? "slice" : "slices"} · ${slices}`);
   }
+  if (shape.overReads.length > 0) {
+    const n = shape.overReads.length;
+    lines.push(`mktrue: re-read past ${RE_READS_PER_SLICE} · ${n} ${n === 1 ? "path" : "paths"}`);
+    const top = [...shape.overReads].sort((a, b) => b.reReads - a.reReads).slice(0, TOP_SHOWN);
+    for (const { slice, path, reReads } of top) {
+      const head = `mktrue: re-read · ${clip(printable(slice), 20)} · `;
+      const tail = ` · ${reReads}`;
+      lines.push(
+        `${head}${clipLeft(printable(path), columns() - head.length - tail.length)}${tail}`,
+      );
+    }
+    if (n > TOP_SHOWN) lines.push(`mktrue: re-read · ${n - TOP_SHOWN} more · see --json`);
+  }
+  return lines;
+}
+
+export function floorLines(fixedReading: AuditReport["fixedReading"], runs: number): string[] {
+  const { budget, over, startedBefore } = fixedReading;
+  if (budget === undefined || over === undefined) return [];
+  const before =
+    startedBefore === undefined
+      ? []
+      : [`mktrue: fixed reading · ${startedBefore} runs started before the window, not counted`];
+  if (over.length === 0)
+    return [`mktrue: fixed reading · ${runs} runs within ${budget} tokens`, ...before];
+  const n = over.length;
+  const lines = [`mktrue: fixed reading over ${budget} tokens · ${n} of ${runs} runs`, ...before];
+  for (const { run, role, tokens } of over.slice(0, TOP_SHOWN)) {
+    const head = `mktrue: fixed reading · ${clip(printable(role), 20)} · `;
+    const tail = ` · ${tokens}`;
+    lines.push(`${head}${clip(printable(run), columns() - head.length - tail.length)}${tail}`);
+  }
+  if (n > TOP_SHOWN) lines.push(`mktrue: fixed reading · ${n - TOP_SHOWN} more · see --json`);
   return lines;
 }
 
@@ -550,7 +597,7 @@ export async function runAudit(
   }
 
   const trees = await findTrees(ports, top);
-  const { gates, base } = await configOf(ports, top);
+  const { gates, base, floor } = await configOf(ports, top);
   const projects = join(ports.configDir(), "projects");
   const root = await ports.store.realPath(projects);
   const dirs = root === undefined ? [] : await findProjectDirs(ports.store, projects, trees);
@@ -650,6 +697,7 @@ export async function runAudit(
           },
           window,
           ...(typeof merged === "string" ? {} : { merged }),
+          ...(floor === undefined ? {} : { fixedReadingBudget: floor }),
         },
       ),
     ),
@@ -701,6 +749,10 @@ export async function runAudit(
     `mktrue: re-reads · ${totals.reReads} · ${report.reReads.characters} characters`,
     `mktrue: gate runs · ${totals.gateRuns}`,
     ...shapeLines(report.shape),
+    ...floorLines(
+      report.fixedReading,
+      report.fixedReading.lead.count + report.fixedReading.subagents.count,
+    ),
   ];
   if (options.since !== undefined || options.until !== undefined) {
     lines.unshift(

@@ -32,6 +32,8 @@ Six engineering subagents: `architect`, `implementer`, `ui-engineer`, `security-
 1. **Never commit on a subagent's green.** Run `git status`, re-run what you are about to trust, and stage deliberately — never `git add -A`.
 2. **Changes to the authentication surface are never routine.** They need an explicit instruction and a security-auditor pass.
 3. **Known re-run traps.** After a SIGTERM, or a step killed under memory pressure, re-run only the steps that had not passed, with a larger heap. Pass long text to a CLI with `--body-file`, not inline. Stop processes by PID, never `pkill -f`.
+4. **Reads stay small.** A document over its read budget, `budgets.reads` in `.mktrue.json`, is read by section, never whole: search it, then read the lines you need. A mockup is split per screen at handoff, one file per screen, and each screen is listed with its budget.
+5. **A session loads what its template allows.** The template names the plugins and MCP servers a session needs, and `mktrue doctor` lists what one loads (the rules file, the role files, the plugins enabled, the MCP servers configured) and names anything else, with where to turn it off. The user-level configuration is the founder's: the kit names the change and makes none.
 
 ## The gates
 

@@ -6,9 +6,19 @@ import {
   type MktrueConfig,
   type TemplateManifest,
 } from "@mktrue/contracts";
-import { EXIT, type Document, type Finding, type TemplateSource } from "@mktrue/core";
+import {
+  EXIT,
+  globBase,
+  isGlob,
+  matchesGlob,
+  normaliseListed,
+  type Document,
+  type Finding,
+  type ReadRefusal,
+  type TemplateSource,
+} from "@mktrue/core";
 
-import { PathEscapesRepository } from "./adapters.js";
+import { PathEscapesRepository, REPOSITORY_READ_MAX_BYTES } from "./adapters.js";
 import { EMBEDDED_BENCH } from "./bench.embedded.js";
 import type { FileSystem, ReadOnlyFileSystem } from "./ports.js";
 import { columns, clip, errorCode, printable } from "./report.js";
@@ -26,6 +36,9 @@ export interface Repo {
   readonly settings: ReadonlyMap<string, string>;
   readonly settingsLinkedOutside: ReadonlySet<string>;
   readonly pathMatches: ReadonlyMap<string, number>;
+  /** Every file `budgets.reads` names, by its repository path. */
+  readonly readFiles: ReadonlyMap<string, string>;
+  readonly readRefused: ReadonlyMap<string, ReadRefusal>;
   readonly findings: readonly Finding[];
 }
 
@@ -61,6 +74,11 @@ const misnamedTemplate = (directory: string, name: string): Finding => ({
   fix: `rename the directory to ${name}, or set name to ${directory}`,
   exit: EXIT.FINDINGS,
 });
+
+const WALKER_SKIPS = new Set([".git", "node_modules"]);
+
+const walkerSkips = (path: string): boolean =>
+  path.split("/").some((segment) => WALKER_SKIPS.has(segment));
 
 const isBody = (path: string): boolean =>
   path.endsWith(".md") ||
@@ -247,7 +265,7 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
     if (!path.endsWith(".md")) continue;
     const name = path.slice(path.lastIndexOf("/") + 1).toLowerCase();
     if (name === "index.md" || name === "readme.md") continue;
-    const content = await fs.read(path);
+    const content = await fs.read(path, REPOSITORY_READ_MAX_BYTES);
     if (content !== undefined) documents.push({ path, content, kind: "decision" });
   }
 
@@ -257,7 +275,7 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
     const path = manifest?.targets[target]?.settings;
     if (path === undefined) continue;
     try {
-      const content = await fs.read(path);
+      const content = await fs.read(path, REPOSITORY_READ_MAX_BYTES);
       if (content !== undefined) settings.set(path, content);
     } catch (error) {
       if (!(error instanceof PathEscapesRepository)) throw error;
@@ -268,7 +286,7 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
   const owned = new Map<string, string>();
   for (const path of Object.keys(config?.owned ?? {})) {
     try {
-      const content = await fs.read(path);
+      const content = await fs.read(path, REPOSITORY_READ_MAX_BYTES);
       if (content !== undefined) owned.set(path, content);
     } catch (error) {
       if (!(error instanceof PathEscapesRepository) || settingsLinkedOutside.size === 0)
@@ -286,14 +304,51 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
     } else if (pattern.includes("*")) {
       const dir = pattern.slice(0, pattern.lastIndexOf("/"));
       const rest = pattern.slice(pattern.lastIndexOf("/") + 1);
-      const re = new RegExp(`^${rest.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`);
       const listed = await fs.list(dir);
       pathMatches.set(
         pattern,
-        listed.filter((f) => re.test(f.slice(f.lastIndexOf("/") + 1))).length,
+        listed.filter((f) => matchesGlob(rest, f.slice(f.lastIndexOf("/") + 1))).length,
       );
     } else {
       pathMatches.set(pattern, (await fs.read(pattern)) !== undefined ? 1 : 0);
+    }
+  }
+
+  const readFiles = new Map<string, string>();
+  const readRefused = new Map<string, ReadRefusal>();
+  const refusal = (error: unknown): ReadRefusal | undefined => {
+    if (error instanceof PathEscapesRepository) return "outside";
+    const code = errorCode(error);
+    if (code === "EISDIR") return "directory";
+    if (code === "NOT_A_FILE") return "special";
+    if (code === "TOO_LARGE") return "large";
+    if (code === "ENOTDIR") return undefined;
+    throw error;
+  };
+  for (const entry of config?.budgets.reads ?? []) {
+    const listed = normaliseListed(entry.path);
+    let candidates = [listed];
+    if (isGlob(listed)) {
+      const base = globBase(listed);
+      try {
+        candidates = (await fs.list(base)).filter(
+          (path) => !walkerSkips(path.slice(base.length)) && matchesGlob(listed, path),
+        );
+      } catch (error) {
+        const why = refusal(error);
+        if (why !== undefined) readRefused.set(listed, why);
+        continue;
+      }
+    }
+    for (const path of candidates) {
+      if (readFiles.has(path) || readRefused.has(path)) continue;
+      try {
+        const content = await fs.read(path, REPOSITORY_READ_MAX_BYTES);
+        if (content !== undefined) readFiles.set(path, content);
+      } catch (error) {
+        const why = refusal(error);
+        if (why !== undefined) readRefused.set(path, why);
+      }
     }
   }
 
@@ -309,6 +364,8 @@ export async function loadRepo(fs: FileSystem, benchFs?: FileSystem): Promise<Re
     settings,
     settingsLinkedOutside,
     pathMatches,
+    readFiles,
+    readRefused,
     findings,
   };
 }

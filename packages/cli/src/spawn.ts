@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { statSync } from "node:fs";
+import { homedir } from "node:os";
 import { basename, extname, isAbsolute, join } from "node:path";
 
 import { EXIT, type ExitCode } from "@mktrue/core";
@@ -11,12 +12,14 @@ import { clip, columns, printable, refuse } from "./report.js";
 export interface Host {
   readonly platform: NodeJS.Platform;
   readonly env: NodeJS.ProcessEnv;
+  readonly home: string;
   isFile(path: string): boolean;
 }
 
 export const processHost = (): Host => ({
   platform: process.platform,
   env: process.env,
+  home: homedir(),
   isFile(path) {
     try {
       return statSync(path).isFile();

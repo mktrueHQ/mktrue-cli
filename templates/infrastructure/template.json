@@ -101,6 +101,10 @@
     "2": "rules/02-stack-and-versions.md",
     "10": "rules/10-where-things-live.md"
   },
+  "session": {
+    "plugins": [],
+    "mcpServers": []
+  },
   "gates": ["sh scripts/shellcheck.sh", "sh scripts/compose-check.sh"],
   "requires": ["docker"]
 }

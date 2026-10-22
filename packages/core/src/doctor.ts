@@ -1,3 +1,6 @@
+import { sessionNameSchema, type SessionAllowlist } from "@mktrue/contracts";
+
+import { EXIT, type Finding } from "./findings.js";
 import type { PnpmRequirement } from "./new.js";
 
 /** Doctor's own minimum: the version pin this kit is built and tested against. */
@@ -52,4 +55,105 @@ export function missingRoleFiles(
     const text = files.get(role);
     return text === undefined || roleFileName(text) !== role;
   });
+}
+
+export type SessionScope = "user" | "project" | "local";
+
+export interface LoadedName {
+  readonly name: string;
+  readonly scope: SessionScope;
+  /** The file it is turned off in, as the founder would type it. */
+  readonly source: string;
+}
+
+export interface SessionFile {
+  readonly path: string;
+  readonly characters: number;
+}
+
+export interface SessionLoad {
+  readonly files: readonly SessionFile[];
+  readonly plugins: readonly LoadedName[];
+  readonly mcpServers: readonly LoadedName[];
+}
+
+export interface SessionAllowance {
+  readonly template: string;
+  readonly allowlist: SessionAllowlist;
+}
+
+const list = (names: readonly string[]) => (names.length === 0 ? "none" : names.join(", "));
+
+const level = (scope: SessionScope) => `${scope} level`;
+
+function pluginAllowed(name: string, allowed: readonly string[]): boolean {
+  const bare = name.split("@")[0] ?? name;
+  return allowed.includes(name) || allowed.includes(bare);
+}
+
+function pluginFix(loaded: LoadedName): string {
+  return `${level(loaded.scope)}: set enabledPlugins false in ${loaded.source}`;
+}
+
+function serverFix(loaded: LoadedName): string {
+  const where = loaded.scope === "local" ? "this repository's mcpServers" : "mcpServers";
+  if (loaded.scope === "project" || !sessionNameSchema.safeParse(loaded.name).success) {
+    return `${level(loaded.scope)}: remove it from ${where} in ${loaded.source}`;
+  }
+  return `${level(loaded.scope)}: claude mcp remove ${loaded.name} --scope ${loaded.scope}`;
+}
+
+/** What a session in this repository loads, and anything outside the template's allowlist. */
+export function sessionReport(
+  load: SessionLoad,
+  allowance: SessionAllowance | undefined,
+): { lines: string[]; findings: Finding[] } {
+  const lines: string[] = [];
+  const findings: Finding[] = [];
+
+  lines.push(
+    allowance === undefined
+      ? "mktrue: doctor · allowlist · none · this repository names no template"
+      : `mktrue: doctor · allowlist · ${allowance.template} · plugins ${list(allowance.allowlist.plugins)} · mcp servers ${list(allowance.allowlist.mcpServers)}`,
+  );
+
+  for (const file of load.files) {
+    lines.push(`mktrue: doctor · loads · ${file.path} · ${file.characters} characters`);
+  }
+
+  const report = (
+    kind: "plugin" | "mcp server",
+    loaded: LoadedName,
+    allowed: boolean | undefined,
+    fix: string,
+  ) => {
+    if (allowed === false) {
+      findings.push({
+        gate: "doctor",
+        what: `${kind} ${loaded.name} is off the allowlist`,
+        why: `the ${allowance?.template ?? ""} template does not need it; every run loads it`,
+        fix,
+        exit: EXIT.FINDINGS,
+      });
+      return;
+    }
+    const mark = allowed === true ? "✓ " : "";
+    lines.push(`mktrue: doctor · ${kind} · ${mark}${loaded.name} · ${level(loaded.scope)}`);
+  };
+
+  if (load.plugins.length === 0) lines.push("mktrue: doctor · plugins · none enabled");
+  for (const plugin of load.plugins) {
+    const allowed =
+      allowance === undefined ? undefined : pluginAllowed(plugin.name, allowance.allowlist.plugins);
+    report("plugin", plugin, allowed, pluginFix(plugin));
+  }
+
+  if (load.mcpServers.length === 0) lines.push("mktrue: doctor · mcp servers · none configured");
+  for (const server of load.mcpServers) {
+    const allowed =
+      allowance === undefined ? undefined : allowance.allowlist.mcpServers.includes(server.name);
+    report("mcp server", server, allowed, serverFix(server));
+  }
+
+  return { lines, findings };
 }

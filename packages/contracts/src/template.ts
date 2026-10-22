@@ -70,6 +70,17 @@ const baselineSchema = z
   )
   .default({});
 
+export const sessionNameSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9][A-Za-z0-9._@-]*$/, "a plugin or server name is letters, digits, . _ @ -");
+
+export const sessionAllowlistSchema = z
+  .object({
+    plugins: z.array(sessionNameSchema).default([]),
+    mcpServers: z.array(sessionNameSchema).default([]),
+  })
+  .strict();
+
 export const templateRequirementSchema = z.enum(["pnpm", "docker", "git"]);
 
 export const templateManifestSchema = z.object({
@@ -85,6 +96,7 @@ export const templateManifestSchema = z.object({
     .record(z.string().regex(/^[1-9][0-9]*$/, "a rules section number"), relativePathSchema)
     .default({}),
   requires: z.array(templateRequirementSchema).default(["pnpm"]),
+  session: sessionAllowlistSchema.default({ plugins: [], mcpServers: [] }),
   transforms: z.array(templateTransformSchema).default([]),
   tokenise: z.array(slotKeySchema).default([]),
   imported: baselineSchema,
@@ -95,4 +107,5 @@ export type TemplateRequirement = z.infer<typeof templateRequirementSchema>;
 export type TemplateCondition = z.infer<typeof templateConditionSchema>;
 export type TemplateFile = z.infer<typeof templateFileSchema>;
 export type TemplateTransform = z.infer<typeof templateTransformSchema>;
+export type SessionAllowlist = z.infer<typeof sessionAllowlistSchema>;
 export type TemplateManifest = z.infer<typeof templateManifestSchema>;

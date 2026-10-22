@@ -114,11 +114,20 @@ export function declaresAnswer(path: string): boolean {
   return true;
 }
 
+export const readBudgetSchema = z
+  .object({
+    path: relativePathSchema,
+    characters: z.number().int().positive().optional(),
+  })
+  .strict();
+
 export const budgetsSchema = z.object({
   rules: z.number().int().positive(),
   state: z.number().int().positive(),
   decision: z.number().int().positive(),
   context: contextBudgetsSchema.optional(),
+  reads: z.array(readBudgetSchema).optional(),
+  fixedReading: z.number().int().positive().optional(),
 });
 
 export const ownedSchema = z.record(
@@ -167,4 +176,5 @@ export const mktrueConfigSchema = z.object({
 
 export type Answers = z.infer<typeof answersSchema>;
 export type Budgets = z.infer<typeof budgetsSchema>;
+export type ReadBudget = z.infer<typeof readBudgetSchema>;
 export type MktrueConfig = z.infer<typeof mktrueConfigSchema>;

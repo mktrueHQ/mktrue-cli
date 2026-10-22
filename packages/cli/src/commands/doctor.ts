@@ -3,20 +3,34 @@ import { dirname, join } from "node:path";
 import {
   EXIT,
   REQUIRED_PNPM,
+  characterCount,
   exitCodeFor,
   isOneMillionModel,
   missingRoleFiles,
   nodeSatisfies,
   pnpmSatisfies,
+  sessionReport,
   type ExitCode,
   type Finding,
+  type LoadedName,
+  type SessionAllowance,
+  type SessionFile,
+  type SessionScope,
 } from "@mktrue/core";
+import { templateManifestSchema } from "@mktrue/contracts";
 
 import { checkEnvironment } from "../environment.js";
 import { templatesPnpmPin } from "../pnpm-pin.js";
 import type { DoctorPorts, Output } from "../ports.js";
 import { clip, columns, printable } from "../report.js";
 import { embeddedManifest } from "../repo.js";
+import { EMBEDDED_TEMPLATES } from "../templates.embedded.js";
+import {
+  REPOSITORY_READ_MAX_BYTES,
+  extractEnabledPlugins,
+  extractMcpServerNames,
+  namesIn,
+} from "../adapters.js";
 
 const ROLE_TARGET = "claude-code";
 const ROLE_SLOT = "__MKTRUE_ROLE_ID__";
@@ -245,11 +259,120 @@ async function readInside(
   }
 }
 
-async function checkRoles(ports: DoctorPorts, out: Output): Promise<Finding[]> {
+interface Inside {
+  readonly top: string;
+  read(path: string): Promise<string | undefined>;
+  list(dir: string): Promise<string[]>;
+}
+
+async function openInside(ports: DoctorPorts): Promise<Inside | undefined> {
   const top = await ports.runner.probe(["git", "rev-parse", "--show-toplevel"]);
   const repository = top === undefined ? undefined : ports.repository?.(top);
-  if (repository === undefined) return [];
-  const read = (path: string) => readInside((p) => repository.read(p), path);
+  if (top === undefined || repository === undefined) return undefined;
+  return {
+    top,
+    read: (path) => readInside((p) => repository.read(p, REPOSITORY_READ_MAX_BYTES), path),
+    async list(dir) {
+      try {
+        return await repository.list(dir);
+      } catch {
+        return [];
+      }
+    },
+  };
+}
+
+const AGENTS_DIR = ".claude/agents";
+
+function templateNameOf(configText: string | undefined): string | undefined {
+  if (configText === undefined) return undefined;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(configText);
+  } catch {
+    return undefined;
+  }
+  if (parsed === null || typeof parsed !== "object") return undefined;
+  const template = (parsed as Record<string, unknown>)["template"];
+  if (template === null || typeof template !== "object") return undefined;
+  const name = (template as Record<string, unknown>)["name"];
+  return typeof name === "string" ? name : undefined;
+}
+
+function allowanceFor(template: string | undefined): SessionAllowance | undefined {
+  if (template === undefined) return undefined;
+  const text = EMBEDDED_TEMPLATES[`${template}/template.json`];
+  if (text === undefined) return undefined;
+  const manifest = templateManifestSchema.safeParse(JSON.parse(text));
+  if (!manifest.success) return undefined;
+  return { template: manifest.data.name, allowlist: manifest.data.session };
+}
+
+async function checkSession(
+  ports: DoctorPorts,
+  out: Output,
+  inside: Inside | undefined,
+): Promise<Finding[]> {
+  const home = ports.machine.homeDir();
+  const user = ports.machine.userConfigFiles();
+  const plugins: LoadedName[] = [];
+  const mcpServers: LoadedName[] = [];
+  const named = (
+    into: LoadedName[],
+    names: readonly string[],
+    scope: SessionScope,
+    source: string,
+  ): void => {
+    for (const name of names)
+      into.push({ name: printable(name), scope, source: printable(source) });
+  };
+
+  const files: SessionFile[] = [];
+  named(plugins, await ports.machine.readUserPluginNames(), "user", tilde(user.settings, home));
+  const servers = await ports.machine.readUserMcpServerNames(inside?.top);
+  named(mcpServers, servers.user, "user", tilde(user.config, home));
+  named(mcpServers, servers.local, "local", tilde(user.config, home));
+  let allowance: SessionAllowance | undefined;
+
+  if (inside !== undefined) {
+    const sized = async (path: string) => {
+      const text = await inside.read(path);
+      if (text === undefined) return;
+      files.push({ path: printable(path), characters: characterCount(text) });
+    };
+    await sized("CLAUDE.md");
+    const agents = (await inside.list(AGENTS_DIR)).filter(
+      (path) => path.endsWith(".md") && !path.slice(AGENTS_DIR.length + 1).includes("/"),
+    );
+    for (const path of agents) await sized(path);
+
+    for (const [path, scope] of [
+      [".claude/settings.json", "project"],
+      [".claude/settings.local.json", "local"],
+    ] as const) {
+      named(plugins, namesIn(await inside.read(path), extractEnabledPlugins), scope, path);
+    }
+    named(
+      mcpServers,
+      namesIn(await inside.read(".mcp.json"), extractMcpServerNames),
+      "project",
+      ".mcp.json",
+    );
+    allowance = allowanceFor(templateNameOf(await inside.read(".mktrue.json")));
+  }
+
+  const { lines, findings } = sessionReport({ files, plugins, mcpServers }, allowance);
+  for (const line of lines) say(out, line);
+  return findings.map((f) => doctorFinding(f.what, f.why, f.fix, f.exit));
+}
+
+async function checkRoles(
+  ports: DoctorPorts,
+  out: Output,
+  inside: Inside | undefined,
+): Promise<Finding[]> {
+  if (inside === undefined) return [];
+  const read = inside.read;
   if ((await read(".mktrue.json")) === undefined) {
     say(out, "mktrue: doctor · roles · not checked · this repository has no .mktrue.json");
     return [];
@@ -282,8 +405,10 @@ export async function runDoctor(
 ): Promise<ExitCode> {
   const findings: Finding[] = [];
   const collect = (found: readonly Finding[]) => {
-    for (const finding of found) out.finding(finding);
-    findings.push(...found);
+    for (const finding of found) {
+      out.finding(finding);
+      findings.push(finding);
+    }
   };
 
   collect(checkNode(ports, out));
@@ -296,7 +421,9 @@ export async function runDoctor(
   await checkOptional(ports, out, "claude", "the skill");
 
   collect(await checkModel(ports, out));
-  collect(await checkRoles(ports, out));
+  const inside = await openInside(ports);
+  collect(await checkRoles(ports, out, inside));
+  collect(await checkSession(ports, out, inside));
 
   const exit = exitCodeFor(findings);
   if (exit === EXIT.TRUE) {

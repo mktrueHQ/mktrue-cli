@@ -128,9 +128,10 @@ export const HELP: Record<Command, string> = {
   check: `mktrue check [--siblings [--json]]
 
   Is this repository still true. check reads the document budgets, the
-  bench's integrity, the role tiers, the document paths, the gates
-  .mktrue.json lists, the deny rules of the settings file and the drift
-  of every kit-owned file. It writes nothing and sends nothing.
+  read budgets budgets.reads lists, the bench's integrity, the role
+  tiers, the document paths, the gates .mktrue.json lists, the deny
+  rules of the settings file and the drift of every kit-owned file. It
+  writes nothing and sends nothing.
 
   flags
     --siblings       also compare each repository answers.siblings names,

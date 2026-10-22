@@ -17,6 +17,7 @@ import { nodeGuardPorts } from "./guard-io.js";
 import { exitOnThrow, main } from "./main.js";
 import { templatesPnpmPin } from "./pnpm-pin.js";
 import { runningFile, selfLayout } from "./self.js";
+import { processHost } from "./spawn.js";
 
 const argv = process.argv.slice(2);
 const out = terminalOutput();
@@ -39,7 +40,7 @@ const start = async (): Promise<number> => {
     {
       runner: nodeRunner(process.cwd()),
       pnpmRunner: pnpmProbeRunner(templatesPnpmPin()),
-      machine: nodeMachine(bundlePath),
+      machine: nodeMachine(bundlePath, {}, processHost()),
       repository: (top) => nodeFileSystem(top),
     },
     nodeAuditPorts(process.cwd()),

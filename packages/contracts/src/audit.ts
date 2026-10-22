@@ -159,7 +159,7 @@ export const SUBAGENT_ONLY = [
 
 export const auditReportSchema = z
   .object({
-    schema: z.literal(3),
+    schema: z.literal(4),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     window: z.object({ since: instant, until: instant }).strict(),
     subagentOnly: z.array(z.enum(SUBAGENT_ONLY)),
@@ -187,7 +187,17 @@ export const auditReportSchema = z
     histogram: z
       .array(z.object({ bucket: z.enum(AUDIT_BUCKETS), lead: count, subagents: count }).strict())
       .length(AUDIT_BUCKETS.length),
-    fixedReading: z.object({ lead: distributionSchema, subagents: distributionSchema }).strict(),
+    fixedReading: z
+      .object({
+        lead: distributionSchema,
+        subagents: distributionSchema,
+        startedBefore: count.optional(),
+        budget: count.optional(),
+        over: z
+          .array(z.object({ run: z.string(), role: z.string(), tokens: count }).strict())
+          .optional(),
+      })
+      .strict(),
     reReads: z
       .object({
         count,
@@ -283,6 +293,9 @@ export const auditReportSchema = z
             .strict(),
         ),
         overBound: z.array(z.object({ slice: z.string(), runs: count, bound: count }).strict()),
+        overReads: z.array(
+          z.object({ slice: z.string(), path: z.string(), reReads: count }).strict(),
+        ),
       })
       .strict(),
     totals: z

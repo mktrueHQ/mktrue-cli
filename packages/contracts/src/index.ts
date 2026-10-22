@@ -44,8 +44,9 @@ export {
   mktrueConfigSchema,
   ownedSchema,
   portSchema,
+  readBudgetSchema,
 } from "./config.js";
-export type { Answers, Budgets, MktrueConfig } from "./config.js";
+export type { Answers, Budgets, MktrueConfig, ReadBudget } from "./config.js";
 
 export { contextBudgetsSchema, hookInputSchema } from "./guard.js";
 export type { ContextBudgets, HookInput } from "./guard.js";
@@ -55,6 +56,8 @@ export {
   MAX_TRANSFORM_LENGTH,
   MAX_TRANSFORM_RANGES,
   TRANSFORM_UNIT,
+  sessionAllowlistSchema,
+  sessionNameSchema,
   templateConditionSchema,
   templateFileSchema,
   templateManifestSchema,
@@ -64,6 +67,7 @@ export {
   transformPatternIsSafe,
 } from "./template.js";
 export type {
+  SessionAllowlist,
   TemplateCondition,
   TemplateFile,
   TemplateManifest,

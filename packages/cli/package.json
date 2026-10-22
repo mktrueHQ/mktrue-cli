@@ -1,6 +1,6 @@
 {
   "name": "mktrue",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Turns a product idea into a repository an AI coding agent can build without drifting, and keeps it in step.",
   "keywords": [
     "cli",
