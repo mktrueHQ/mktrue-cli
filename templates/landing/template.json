@@ -342,7 +342,7 @@
   },
   "session": {
     "plugins": [],
-    "mcpServers": []
+    "mcpServers": ["playwright"]
   },
   "gates": [
     "pnpm install --frozen-lockfile",

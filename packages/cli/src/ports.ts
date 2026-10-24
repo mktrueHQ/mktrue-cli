@@ -1,4 +1,4 @@
-import type { Finding, Question } from "@mktrue/core";
+import type { Finding, PluginSwitch, Question } from "@mktrue/core";
 
 export interface FileSystem {
   /** Throws `NOT_A_FILE` for a FIFO or device, `TOO_LARGE` past `maxBytes`. */
@@ -104,15 +104,18 @@ export interface Machine {
   readSettingsModel(): Promise<string | undefined>;
   /** The user settings and the user-level Claude config, by path. */
   userConfigFiles(): { readonly settings: string; readonly config: string };
-  /** The `enabledPlugins` names set to true in the user settings; no value is read. */
-  readUserPluginNames(): Promise<readonly string[]>;
+  /** The user settings' `enabledPlugins` keys and their booleans; no other value is read. */
+  readUserPluginSwitches(): Promise<readonly PluginSwitch[]>;
   /**
-   * The `mcpServers` names of the user-level Claude config, and of its
-   * `projects` entry for `repo` alone; no value is read.
+   * The `mcpServers` names of the user-level Claude config, and the
+   * `mcpServers` and `disabledMcpServers` names of its `projects` entry for
+   * `repo` alone; no value is read.
    */
-  readUserMcpServerNames(
-    repo: string | undefined,
-  ): Promise<{ readonly user: readonly string[]; readonly local: readonly string[] }>;
+  readUserMcpServerNames(repo: string | undefined): Promise<{
+    readonly user: readonly string[];
+    readonly local: readonly string[];
+    readonly disabled: readonly string[];
+  }>;
   /** Links `target` at `path`, which `inspectLink` just found missing. */
   linkFresh(target: string, path: string): Promise<LinkOutcome>;
   /** Replaces `path`, our own link to `expectedRealPath`, with a link to `target`. */

@@ -4,6 +4,8 @@ import {
   EXIT,
   REQUIRED_PNPM,
   characterCount,
+  connectedServers,
+  enabledPlugins,
   exitCodeFor,
   isOneMillionModel,
   missingRoleFiles,
@@ -13,6 +15,7 @@ import {
   type ExitCode,
   type Finding,
   type LoadedName,
+  type PluginLayer,
   type SessionAllowance,
   type SessionFile,
   type SessionScope,
@@ -27,8 +30,8 @@ import { embeddedManifest } from "../repo.js";
 import { EMBEDDED_TEMPLATES } from "../templates.embedded.js";
 import {
   REPOSITORY_READ_MAX_BYTES,
-  extractEnabledPlugins,
   extractMcpServerNames,
+  extractPluginSwitches,
   namesIn,
 } from "../adapters.js";
 
@@ -315,23 +318,21 @@ async function checkSession(
 ): Promise<Finding[]> {
   const home = ports.machine.homeDir();
   const user = ports.machine.userConfigFiles();
-  const plugins: LoadedName[] = [];
-  const mcpServers: LoadedName[] = [];
-  const named = (
-    into: LoadedName[],
-    names: readonly string[],
-    scope: SessionScope,
-    source: string,
-  ): void => {
-    for (const name of names)
-      into.push({ name: printable(name), scope, source: printable(source) });
+  const pluginLayers: PluginLayer[] = [];
+  const servers: LoadedName[] = [];
+  const named = (names: readonly string[], scope: SessionScope, source: string): void => {
+    for (const name of names) servers.push({ name, scope, source });
   };
 
   const files: SessionFile[] = [];
-  named(plugins, await ports.machine.readUserPluginNames(), "user", tilde(user.settings, home));
-  const servers = await ports.machine.readUserMcpServerNames(inside?.top);
-  named(mcpServers, servers.user, "user", tilde(user.config, home));
-  named(mcpServers, servers.local, "local", tilde(user.config, home));
+  pluginLayers.push({
+    scope: "user",
+    source: tilde(user.settings, home),
+    switches: await ports.machine.readUserPluginSwitches(),
+  });
+  const userServers = await ports.machine.readUserMcpServerNames(inside?.top);
+  named(userServers.user, "user", tilde(user.config, home));
+  named(userServers.local, "local", tilde(user.config, home));
   let allowance: SessionAllowance | undefined;
 
   if (inside !== undefined) {
@@ -350,18 +351,20 @@ async function checkSession(
       [".claude/settings.json", "project"],
       [".claude/settings.local.json", "local"],
     ] as const) {
-      named(plugins, namesIn(await inside.read(path), extractEnabledPlugins), scope, path);
+      pluginLayers.push({
+        scope,
+        source: path,
+        switches: namesIn(await inside.read(path), extractPluginSwitches),
+      });
     }
-    named(
-      mcpServers,
-      namesIn(await inside.read(".mcp.json"), extractMcpServerNames),
-      "project",
-      ".mcp.json",
-    );
+    named(namesIn(await inside.read(".mcp.json"), extractMcpServerNames), "project", ".mcp.json");
     allowance = allowanceFor(templateNameOf(await inside.read(".mktrue.json")));
   }
 
-  const { lines, findings } = sessionReport({ files, plugins, mcpServers }, allowance);
+  const plugins = enabledPlugins(pluginLayers);
+  const mcpServers = connectedServers(servers, userServers.disabled);
+
+  const { lines, findings } = sessionReport({ files, plugins, mcpServers }, allowance, printable);
   for (const line of lines) say(out, line);
   return findings.map((f) => doctorFinding(f.what, f.why, f.fix, f.exit));
 }

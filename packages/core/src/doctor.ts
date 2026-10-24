@@ -91,22 +91,82 @@ function pluginAllowed(name: string, allowed: readonly string[]): boolean {
   return allowed.includes(name) || allowed.includes(bare);
 }
 
+const isTypable = (name: string) => sessionNameSchema.safeParse(name).success;
+
+type Show = (text: string) => string;
+
 function pluginFix(loaded: LoadedName): string {
-  return `${level(loaded.scope)}: set enabledPlugins false in ${loaded.source}`;
-}
-
-function serverFix(loaded: LoadedName): string {
-  const where = loaded.scope === "local" ? "this repository's mcpServers" : "mcpServers";
-  if (loaded.scope === "project" || !sessionNameSchema.safeParse(loaded.name).success) {
-    return `${level(loaded.scope)}: remove it from ${where} in ${loaded.source}`;
+  if (!isTypable(loaded.name)) {
+    return `${level(loaded.scope)}: set enabledPlugins false in .claude/settings.local.json`;
   }
-  return `${level(loaded.scope)}: claude mcp remove ${loaded.name} --scope ${loaded.scope}`;
+  return `${level(loaded.scope)}: claude plugin disable ${loaded.name} --scope local`;
 }
 
-/** What a session in this repository loads, and anything outside the template's allowlist. */
+function serverFix(loaded: LoadedName, show: Show): string {
+  if (loaded.scope === "project") {
+    return `${level(loaded.scope)}: remove it from mcpServers in ${show(loaded.source)}`;
+  }
+  if (!isTypable(loaded.name)) {
+    return `${level(loaded.scope)}: add it to this project's disabledMcpServers, ${show(loaded.source)}`;
+  }
+  return `${level(loaded.scope)}: turn it off for this project in /mcp`;
+}
+
+/** One `enabledPlugins` key and its boolean. */
+export interface PluginSwitch {
+  readonly name: string;
+  readonly on: boolean;
+}
+
+/** One settings file's `enabledPlugins` booleans, by the scope it sits at. */
+export interface PluginLayer {
+  readonly scope: SessionScope;
+  readonly source: string;
+  readonly switches: readonly PluginSwitch[];
+}
+
+const PRECEDENCE: Record<SessionScope, number> = { user: 0, project: 1, local: 2 };
+
+/** Each plugin the highest-precedence file naming it sets true: local, then project, then user. */
+export function enabledPlugins(layers: readonly PluginLayer[]): LoadedName[] {
+  const winner = new Map<string, { rank: number; on: boolean }>();
+  for (const layer of layers) {
+    const rank = PRECEDENCE[layer.scope];
+    for (const { name, on } of layer.switches) {
+      const current = winner.get(name);
+      if (current === undefined || rank > current.rank) winner.set(name, { rank, on });
+    }
+  }
+  const loaded: LoadedName[] = [];
+  for (const layer of layers) {
+    const rank = PRECEDENCE[layer.scope];
+    for (const { name } of layer.switches) {
+      const won = winner.get(name);
+      if (won?.on === true && won.rank === rank) {
+        loaded.push({ name, scope: layer.scope, source: layer.source });
+      }
+    }
+  }
+  return loaded;
+}
+
+/** The servers a session connects: none this repository's `disabledMcpServers` names. */
+export function connectedServers(
+  servers: readonly LoadedName[],
+  disabled: readonly string[],
+): LoadedName[] {
+  const off = new Set(disabled);
+  return servers.filter((server) => server.scope === "project" || !off.has(server.name));
+}
+
+/**
+ * What a session in this repository loads, and anything outside the template's allowlist.
+ * The checks compare raw names; `show` only shapes what is printed.
+ */
 export function sessionReport(
   load: SessionLoad,
   allowance: SessionAllowance | undefined,
+  show: Show = (text) => text,
 ): { lines: string[]; findings: Finding[] } {
   const lines: string[] = [];
   const findings: Finding[] = [];
@@ -130,7 +190,7 @@ export function sessionReport(
     if (allowed === false) {
       findings.push({
         gate: "doctor",
-        what: `${kind} ${loaded.name} is off the allowlist`,
+        what: `${kind} ${show(loaded.name)} is off the allowlist`,
         why: `the ${allowance?.template ?? ""} template does not need it; every run loads it`,
         fix,
         exit: EXIT.FINDINGS,
@@ -138,7 +198,7 @@ export function sessionReport(
       return;
     }
     const mark = allowed === true ? "✓ " : "";
-    lines.push(`mktrue: doctor · ${kind} · ${mark}${loaded.name} · ${level(loaded.scope)}`);
+    lines.push(`mktrue: doctor · ${kind} · ${mark}${show(loaded.name)} · ${level(loaded.scope)}`);
   };
 
   if (load.plugins.length === 0) lines.push("mktrue: doctor · plugins · none enabled");
@@ -152,7 +212,7 @@ export function sessionReport(
   for (const server of load.mcpServers) {
     const allowed =
       allowance === undefined ? undefined : allowance.allowlist.mcpServers.includes(server.name);
-    report("mcp server", server, allowed, serverFix(server));
+    report("mcp server", server, allowed, serverFix(server, show));
   }
 
   return { lines, findings };

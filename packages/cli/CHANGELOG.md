@@ -1,5 +1,11 @@
 # mktrue
 
+## 1.3.1
+
+### Patch Changes
+
+- 87b4ef4: `mktrue doctor` honours the per-project overrides Claude Code documents. A plugin is listed only when the highest-precedence settings file naming it, local over project over user, sets it `true`, so a `false` in `.claude/settings.local.json` turns a user-level plugin off for this repository. A user or local MCP server named in this repository's `disabledMcpServers` in the user-level `.claude.json`, the list the `/mcp` toggle writes, is not listed; doctor reads that one key's string entries, names only, and no other project's. The fix lines name the per-project change instead of a user-level one: `claude plugin disable <id> --scope local` for a plugin, "turn it off for this project in /mcp" for a server, the command only for a name that is safe in a shell. The allowlist and that check compare the raw name, so a name holding an invisible or control character is never allowlisted and never gets a command; only the printed name is stripped. The reads are decision 0046. The landing template allows `playwright`, as the application template does (decision 0045).
+
 ## 1.3.0
 
 ### Minor Changes

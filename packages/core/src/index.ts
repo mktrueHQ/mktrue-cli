@@ -150,6 +150,8 @@ export type { Question, QuestionKind } from "./questions.js";
 
 export {
   REQUIRED_PNPM,
+  connectedServers,
+  enabledPlugins,
   isOneMillionModel,
   missingRoleFiles,
   nodeSatisfies,
@@ -159,6 +161,8 @@ export {
 } from "./doctor.js";
 export type {
   LoadedName,
+  PluginLayer,
+  PluginSwitch,
   SessionAllowance,
   SessionFile,
   SessionLoad,

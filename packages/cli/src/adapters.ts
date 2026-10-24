@@ -39,7 +39,7 @@ import type { Readable, Writable } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
 
 import { shownPathSchema } from "@mktrue/contracts";
-import type { Finding, Question } from "@mktrue/core";
+import type { Finding, PluginSwitch, Question } from "@mktrue/core";
 import { questionsFor } from "@mktrue/core";
 
 import { readOnlyGit } from "./git.js";
@@ -447,11 +447,14 @@ function objectAt(parsed: unknown, key: string): Record<string, unknown> | undef
   return value as Record<string, unknown>;
 }
 
-/** The `enabledPlugins` keys set to `true`; a value is compared, never kept or shown. */
-export function extractEnabledPlugins(settings: unknown): string[] {
+/** The `enabledPlugins` keys whose value is a boolean, with that boolean; nothing else is kept. */
+export function extractPluginSwitches(settings: unknown): PluginSwitch[] {
   const plugins = objectAt(settings, "enabledPlugins");
   if (plugins === undefined) return [];
-  return Object.keys(plugins).filter((name) => plugins[name] === true);
+  return Object.keys(plugins).flatMap((name) => {
+    const on = plugins[name];
+    return typeof on === "boolean" ? [{ name, on }] : [];
+  });
 }
 
 /** The `mcpServers` keys; an entry's value can hold tokens and is never touched. */
@@ -460,28 +463,40 @@ export function extractMcpServerNames(config: unknown): string[] {
   return servers === undefined ? [] : Object.keys(servers);
 }
 
-/**
- * The `mcpServers` keys of this repository's own entry under `projects`,
- * looked up by its exact path; the other keys name the user's repositories.
- */
+/** This repository's own entry under `projects`, by its exact path; the other keys name the user's repositories. */
+function projectEntry(config: unknown, repo: string, platform: NodeJS.Platform): unknown {
+  const projects = objectAt(config, "projects");
+  if (projects === undefined) return undefined;
+  const spellings =
+    platform === "win32" ? [repo, repo.replaceAll("\\", "/"), repo.replaceAll("/", "\\")] : [repo];
+  const key = spellings.find((spelling) => Object.hasOwn(projects, spelling));
+  return key === undefined ? undefined : projects[key];
+}
+
+/** The `mcpServers` keys of this repository's own entry under `projects`. */
 export function extractLocalMcpServerNames(
   config: unknown,
   repo: string,
   platform: NodeJS.Platform,
 ): string[] {
-  const projects = objectAt(config, "projects");
-  if (projects === undefined) return [];
-  const spellings =
-    platform === "win32" ? [repo, repo.replaceAll("\\", "/"), repo.replaceAll("/", "\\")] : [repo];
-  const key = spellings.find((spelling) => Object.hasOwn(projects, spelling));
-  return key === undefined ? [] : extractMcpServerNames(projects[key]);
+  return extractMcpServerNames(projectEntry(config, repo, platform));
 }
 
-/** Names from a JSON file's text, or none when it is not JSON. */
-export function namesIn(
-  text: string | undefined,
-  extract: (parsed: unknown) => string[],
+/** The string entries of this repository's `disabledMcpServers`, the list `/mcp` writes. */
+export function extractDisabledMcpServerNames(
+  config: unknown,
+  repo: string,
+  platform: NodeJS.Platform,
 ): string[] {
+  const entry = projectEntry(config, repo, platform);
+  if (entry === null || typeof entry !== "object") return [];
+  const disabled = (entry as Record<string, unknown>)["disabledMcpServers"];
+  if (!Array.isArray(disabled)) return [];
+  return disabled.filter((name): name is string => typeof name === "string");
+}
+
+/** What a JSON file's text yields, or nothing when it is not JSON. */
+export function namesIn<T>(text: string | undefined, extract: (parsed: unknown) => T[]): T[] {
   if (text === undefined) return [];
   try {
     return extract(JSON.parse(text));
@@ -677,20 +692,26 @@ export function nodeMachine(
 
     userConfigFiles: () => userConfigFiles(host.platform, host.env, host.home),
 
-    async readUserPluginNames() {
+    async readUserPluginSwitches() {
       const { settings } = userConfigFiles(host.platform, host.env, host.home);
-      return namesIn(await readCapped(settings, SETTINGS_MAX_BYTES), extractEnabledPlugins);
+      return namesIn(await readCapped(settings, SETTINGS_MAX_BYTES), extractPluginSwitches);
     },
 
     async readUserMcpServerNames(repo) {
       const { config } = userConfigFiles(host.platform, host.env, host.home);
       const text = await readCapped(config, USER_CONFIG_MAX_BYTES);
+      if (text === undefined) return { user: [], local: [], disabled: [] };
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        return { user: [], local: [], disabled: [] };
+      }
       return {
-        user: namesIn(text, extractMcpServerNames),
-        local:
-          repo === undefined
-            ? []
-            : namesIn(text, (parsed) => extractLocalMcpServerNames(parsed, repo, host.platform)),
+        user: extractMcpServerNames(parsed),
+        local: repo === undefined ? [] : extractLocalMcpServerNames(parsed, repo, host.platform),
+        disabled:
+          repo === undefined ? [] : extractDisabledMcpServerNames(parsed, repo, host.platform),
       };
     },
 
